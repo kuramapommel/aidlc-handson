@@ -66,3 +66,5 @@
 
 <!-- Project-specific corrections from human feedback. -->
 <!-- Format: NEVER/ALWAYS [behavior] (learned [date]) -->
+- このプロジェクトの「EC サイト」は、契約企業の従業員が研修予算（ポイント）で研修コースの受講用 e チケットを購入するサイト（LMS 型）を指す。カートは持たず、1 回の購入で 1 つの日程を購入する。 (learned 2026-10-27) <!-- cid:261027-simple-ec-site:requirements-analysis:73f70c23613612ed94ad92d9998e638ede62fd67e40e583b37783fc403923d39 -->
+- 質問への回答で前提（商材・利用者など）が変わったら、残りの質問の選択肢をその前提に合わせて書き換えてから質問する。 (learned 2026-10-27) <!-- cid:261027-simple-ec-site:requirements-analysis:93c6b877de1cb53f8c65297a4460ad1de2c791bc98c4e53161fb2f35cee1a59f -->
