@@ -7,6 +7,7 @@
 
 ## Deviations
 <!-- example: 2026-05-29T10:14:32Z — skipped the optional caching layer the stage prose suggested; the dataset is small enough that it adds risk -->
+- 2026-10-28T13:18:25Z — 受け入れ基準がユニットをまたがないよう、承認済みのユーザーストーリーを組み直した（AC2.1.3 → AC1.8.4、AC3.5.3 の案内先変更、AC4.1.3 の一部 → AC4.2.4、AC4.2.5 追加）; ユーザーから「後続ユニットで満たす形は疎結合に反する」と指摘があり、許可を得て修正した。ユニット分割では各ユニットが担当ストーリーの受け入れ基準を単独で満たせるかを確認する。
 
 ## Tradeoffs
 <!-- example: 2026-05-29T10:14:32Z — picked TDD over BDD this run; the team is unit-first and the domain is well-understood -->
