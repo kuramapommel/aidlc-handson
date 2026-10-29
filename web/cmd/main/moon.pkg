@@ -1,0 +1,5 @@
+// import {
+//   "aidlc-handson/web" @lib,
+// }
+
+pkgtype(kind: "executable")
