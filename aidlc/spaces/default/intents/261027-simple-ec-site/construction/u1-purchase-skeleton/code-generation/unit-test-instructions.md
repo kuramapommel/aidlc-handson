@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | Rust の業務 4 crate・データストア・静的ファイルサーバー | 標準のテスト（`#[test]`）。同時購入のテストは tokio のテスト用の実行環境（`#[tokio::test(flavor = "multi_thread")]`） | 追加の設定ファイルなし。各 crate の `src/` 内の `#[cfg(test)]` モジュールと `tests/` に置く |
 | Rust の Web API | 標準のテスト＋tokio。サーバーを起動せず、`tower` の `ServiceExt::oneshot` で受け口を直接呼ぶ | `crates/web_api/tests/` に置く。ポートを使わない |
-| MoonBit の画面 | 標準の `moon test`。更新関数（メッセージ＋状態 → 新しい状態＋コマンド）を純粋関数としてテストする | `web/` のパッケージ内の `*_test.mbt` |
+| MoonBit の画面 | 標準の `moon test`（JavaScript 向け。テストの実行に Node.js を使う。2026-10-29 に前提として承認）。更新関数（メッセージ＋状態 → 新しい状態＋コマンド）を純粋関数としてテストする | `web/` のパッケージ内の `*_test.mbt` |
 
 ## このユニットのテストの実行コマンド
 
@@ -17,7 +17,7 @@
 cargo test -p course_catalog -p eligibility -p training_budget -p purchasing -p in_memory_store -p web_api -p static_server
 
 # MoonBit の画面（U1 の画面のプロジェクトだけ）
-moon test --directory web
+moon -C web test --target js
 ```
 
 最初のテストの前（Step 2）に、Rust のコマンドが 0 件のテストで成功することを確かめる。MoonBit のコマンドは、MoonBit のツールが導入できたあと（Step 13）に確かめる。導入できない場合は MoonBit のテストは実行できないため、実行できなかったことをそのまま報告する（成功とは扱わない）。

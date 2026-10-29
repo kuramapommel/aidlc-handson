@@ -87,4 +87,4 @@ HTTP クライアント（`reqwest` など）は、テストでもサーバー�
 | --- | --- | --- |
 | TQ-1 | MoonBit のツールとパッケージの取得先（`cli.moonbitlang.com`、`download.moonbitlang.com`、`mooncakes.io`）の許可。許可されるまでは、Rust 側を先に作る（外部依存 ED-1） | 利用者の環境設定の変更後、コード生成の前に確かめる |
 | TQ-2 | rabbita の最新版が、Cookie 付きの通信（資格情報付きの fetch）と専用ヘッダーの付与に対応しているか | コード生成の Step 13 |
-| TQ-3 | MoonBit の JavaScript 向けのテストと実行に Node.js が要るか（要る場合は NFR9.1 の「前提は Rust と MoonBit だけ」と食い違う） | コード生成の Step 13 |
+| TQ-3 | MoonBit の JavaScript 向けのテストと実行に Node.js が要るか → **解決（2026-10-29）**: テスト（`moon -C web test --target js`）には要る。ビルドとブラウザでの実行には要らない。利用者が、画面のテストの前提として Node.js を認めた（NFR9.1 を更新） | 解決済み |
