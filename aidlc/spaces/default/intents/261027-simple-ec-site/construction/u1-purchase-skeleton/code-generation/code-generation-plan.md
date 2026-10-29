@@ -66,6 +66,15 @@
 - [ ] **Step 13: MoonBit の画面のプロジェクトを用意する**（TQ-1、TQ-2）
   - MoonBit のツールを導入できることを確かめる。できなければここで止めて報告する（前提と進め方を参照）。
   - `web/` に MoonBit のプロジェクト（JavaScript 向け）を作り、rabbita（`moonbit-community/rabbita`）の最新版を追加する。資格情報（Cookie）付きの通信と専用ヘッダーの付与ができることを確かめる。できなければここで止め、原因と対策の案を報告する。
+  - **2026-10-29 の変更**: rabbita 0.17.0 の通信の部品は、別オリジンへの Cookie の送信・専用ヘッダー・2xx 以外の応答の本文の受け取りに対応していなかった。利用者の判断で、TEA の実行環境・描画・URL の扱いは rabbita のまま使い、通信のコマンドだけを `mizchi/js_web`（fetch の `credentials` とヘッダーを指定できる、MoonBit で最も使われているブラウザの API の取り込み）で作り、rabbita の公開の拡張口からコマンドとして使う。`mizchi/js_web` の最新版を追加し、rabbita と一緒にビルドできること、`credentials: "include"`・専用ヘッダー・409 の本文の受け取りができることを確かめる。
+  - **雛形のファイルの置き直し（2026-10-29 に利用者が承認）**: `moon new` が作った雛形を、monorepo の中で働く場所と中身に置き直す。
+    - `web/.github/workflows/copilot-setup-steps.yml` → ルートの `.github/workflows/copilot-setup-steps.yml`。準備の手順を monorepo 全体（Rust・MoonBit・画面のテスト用の Node.js）向けに直す。
+    - `web/.githooks/`（`pre-commit` と説明）→ ルートの `.githooks/`。中身を `cargo fmt --check` と `moon -C web check` を行う monorepo 全体のコミット前の確認に直し、有効にするコマンド（`git config core.hooksPath .githooks`）を README に書く（各自の手元で 1 回設定する）。
+    - `web/AGENTS.md` は `web/` に残し、画面（MoonBit）の決まり（TEA・関数型・rabbita と mizchi/js_web の使い方）を足す。ルートに `AGENTS.md` を作り、monorepo の構成（`crates/` と `web/`）と各部分の案内への道しるべを書く。
+    - `web/LICENSE` は、ライセンスをまだ決めないため、今の場所に置いたままにする（利用者の判断）。
+    - `web/README.mbt.md`（と `web/README.md` のリンク）は `web/` に残し、画面の部分の説明書き（作り・ビルドとテストのコマンド・使っているライブラリ）に書き直す。ルートの `README.md` と互いにリンクする。
+    - `web/cmd/main/` は、ブラウザで画面（TEA）を起動する薄い入り口にする。
+    - `web/web.mbt`・`web_test.mbt`・`web_wbtest.mbt` は画面の本体（状態・メッセージ・更新関数・描画関数・通信のコマンド）・公開の振る舞いのテスト・内部の補助関数のテストに使う。大きくなる場合は同じパッケージの中でファイルを分ける。
 - [ ] **Step 14: 画面（TEA）を実装する**（US1.1、US2.1〜US2.3、US3.1〜US3.5、US4.1、US5.1。BR1.3、BR1.4、BR2.5、BR6.4、BR7.1〜BR7.11、NFR4、NFR5、NFR3.11）
   - `frontend-components.md` の部品・状態（Model）・画面と URL（Route）・メッセージと更新・描画のルール・Web API との連携のとおりに作る。
   - 操作できる部品に `data-testid` を付ける。状態は色だけでなく文字で示し、ボタンと選択の部品にラベルを付け、キーボードで操作できるようにする（NFR5）。Web API から受け取った文字列は文字として表示する（NFR3.11）。
