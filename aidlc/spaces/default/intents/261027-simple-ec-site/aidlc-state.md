@@ -66,11 +66,9 @@
 
 - **Unit Stage**: code-generation
 
-- **Unit State**: paused
+- **Unit State**: in-progress
 
-- **Unit Pause Reason**: rabbit-tea を追加できず Step 13 で停止（全版 yanked・後継 rabbita、download.mooncakes.io が通信拒否）
 
-- **Unit Next Action**: 画面ライブラリの方針（A: download.mooncakes.io を許可して rabbita に変更 / B: yanked の rabbit-tea 0.10.11 / C: GitHub から取り込み）を決めてから Step 13 を再開する
 
 ## Phase Progress
 <!-- Status values: Pending, Active, Verified, Skipped -->
@@ -141,7 +139,7 @@ Per unit: [TBD]
 - **Current Stage**: functional-design
 - **Next Stage**: nfr-requirements
 - **Status**: Running
-- **Last Updated**: 2026-10-29T09:32:27Z
+- **Last Updated**: 2026-10-29T09:43:22Z
 
 ## Session Resume Point
 - **Last Completed Stage**: delivery-planning

@@ -2,7 +2,7 @@
 
 ## Summary
 
-- Builds: monorepo の土台、Rust の業務 4 部品・メモリのデータストア・Web API・静的ファイルサーバー、MoonBit（rabbit-tea）の購入の画面、確認コマンド
+- Builds: monorepo の土台、Rust の業務 4 部品・メモリのデータストア・Web API・静的ファイルサーバー、MoonBit（rabbita）の購入の画面、確認コマンド
 - Touches: `Cargo.toml`、`crates/`（7 crate）、`web/`、`scripts/verify.sh`、`README.md`、`.gitignore`
 - Tests: Rust の単体テストと Web API のテスト 約 45 件（同時購入・CSRF・Cookie を含む）、MoonBit の更新関数のテスト 約 12 件
 
@@ -11,7 +11,7 @@
 - 設計の入力: 機能設計（`../functional-design/` の entities.md・rules.md・functional-spec.md・frontend-components.md）、NFR 要件（`../nfr-requirements/` の 6 文書）、ユニット定義、要件定義書。
 - テストの進め方は下の Testing Contract（test-after）に従う。層ごとに「実装 → その層のテストを書いて実行」の順にする。テストの量は Minimal（要件ごとに 1 件、部品ごとに成功の場合を 1 件以上）に、機能設計の境目（BR）と NFR の確認方法で「自動テスト」と書いたものを加える。
 - 関数型で書く（NFR6）。業務の crate は純粋関数だけを持ち、時刻と乱数は引数の関数で受け取る。依存の逆転はトレイトのオブジェクトではなく関数（クロージャ）の受け渡しで行う。
-- **MoonBit の前提（TQ-1）**: Step 13 に入る時点で MoonBit のツールの取得先（`cli.moonbitlang.com`・`download.moonbitlang.com`・`mooncakes.io`）が許可されていなければ、Step 13〜16 は行わずに止め、状況を報告する。rabbit-tea が最新版で使えない場合も、TEA を自作せずに止め、原因と対策の案を報告して判断を仰ぐ（NFR 要件 Q1 の回答）。どちらの場合も、画面の部分ができたと偽らない。
+- **MoonBit の前提（TQ-1）**: Step 13 に入る時点で MoonBit のツールの取得先（`cli.moonbitlang.com`・`mooncakes.io`・パッケージ本体の `download.mooncakes.io`）が許可されていなければ、Step 13〜16 は行わずに止め、状況を報告する。画面の TEA ライブラリは、rabbit-tea が廃止（全版取り下げ）だったため、2026-10-29 の判断で後継の `moonbit-community/rabbita` に変更した。rabbita が最新版で使えない場合も、TEA を自作せずに止め、原因と対策の案を報告して判断を仰ぐ（NFR 要件 Q1 の回答）。どちらの場合も、画面の部分ができたと偽らない。
 
 ## ストーリーとの対応
 
@@ -65,7 +65,7 @@
   - テスト: 既存のファイルが返る、画面内の URL（`/courses/C001` など）で `index.html` が返る、ディレクトリの外のパス（`..`）は配信しない。`cargo test -p static_server`。
 - [ ] **Step 13: MoonBit の画面のプロジェクトを用意する**（TQ-1、TQ-2）
   - MoonBit のツールを導入できることを確かめる。できなければここで止めて報告する（前提と進め方を参照）。
-  - `web/` に MoonBit のプロジェクト（JavaScript 向け）を作り、rabbit-tea の最新版を追加する。資格情報（Cookie）付きの通信と専用ヘッダーの付与ができることを確かめる。できなければここで止め、原因と対策の案を報告する。
+  - `web/` に MoonBit のプロジェクト（JavaScript 向け）を作り、rabbita（`moonbit-community/rabbita`）の最新版を追加する。資格情報（Cookie）付きの通信と専用ヘッダーの付与ができることを確かめる。できなければここで止め、原因と対策の案を報告する。
 - [ ] **Step 14: 画面（TEA）を実装する**（US1.1、US2.1〜US2.3、US3.1〜US3.5、US4.1、US5.1。BR1.3、BR1.4、BR2.5、BR6.4、BR7.1〜BR7.11、NFR4、NFR5、NFR3.11）
   - `frontend-components.md` の部品・状態（Model）・画面と URL（Route）・メッセージと更新・描画のルール・Web API との連携のとおりに作る。
   - 操作できる部品に `data-testid` を付ける。状態は色だけでなく文字で示し、ボタンと選択の部品にラベルを付け、キーボードで操作できるようにする（NFR5）。Web API から受け取った文字列は文字として表示する（NFR3.11）。
