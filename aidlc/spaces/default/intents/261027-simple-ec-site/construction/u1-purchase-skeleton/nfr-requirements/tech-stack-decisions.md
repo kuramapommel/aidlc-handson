@@ -35,7 +35,7 @@ HTTP クライアント（`reqwest` など）は、テストでもサーバー�
 | 用途 | 選定 | 理由 |
 | --- | --- | --- |
 | TEA の実行環境・仮想 DOM・HTTP の呼び出し | MoonBit コミュニティの TEA ライブラリ `moonbit-community/rabbita`（2026-10-29 時点の最新は 0.17.0） | 確認事項 Q1 の回答（rabbit-tea）と、コード生成での判断（後継の rabbita への変更）。TEA（ADR-007）をそのまま実現でき、実行環境を自作しなくて済む |
-| 画面の通信（Cookie 付きの fetch・専用ヘッダー・2xx 以外の本文） | `mizchi/js_web`（2026-10-29 時点の最新は 0.13.1）。rabbita の公開の拡張口からコマンドとして使う | rabbita 0.17.0 の通信の部品（`moonbitlang/async` の fetch を使う）は `credentials` とヘッダーを指定できず、409 の本文も捨てる。rabbita を使う 56 のパッケージに専用の通信ライブラリの定番はなく、MoonBit からブラウザの fetch を使うライブラリとして最も使われているものを選んだ（2026-10-29 に利用者が承認） |
+| 画面の通信（Cookie 付きの fetch・専用ヘッダー・2xx 以外の本文） | `mizchi/js_web`（2026-10-29 時点の最新は 0.13.1）。fetch の本文の型のため `mizchi/js_core`（0.13.0）も直接の依存にする。rabbita の公開の拡張口からコマンドとして使う | rabbita 0.17.0 の通信の部品（`moonbitlang/async` の fetch を使う）は `credentials` とヘッダーを指定できず、409 の本文も捨てる。rabbita を使う 56 のパッケージに専用の通信ライブラリの定番はなく、MoonBit からブラウザの fetch を使うライブラリとして最も使われているものを選んだ（2026-10-29 に利用者が承認） |
 | 画面のテスト | 標準の `moon test` | NFR8.2。更新関数を純粋関数としてテストする |
 
 **変更の経緯（2026-10-29）**: コード生成の Step 13 で、rabbit-tea は廃止扱いで公開済みの 73 版すべてが取り下げ（yanked）られており、後継の `moonbit-community/rabbita` を使うよう案内されることが分かった。あわせて、パッケージ本体の取得先 `download.mooncakes.io` がネットワークの設定で拒否されていた。利用者の判断で、`download.mooncakes.io` を許可し、rabbita に変更した。

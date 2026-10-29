@@ -10,20 +10,10 @@
 
 | 部分 | 状況 |
 | --- | --- |
-| Rust の業務の部品・データストア・Web API・静的ファイルサーバー | 実装済み。テストはすべて成功 |
-| MoonBit の画面（`web/`） | **未実装（Step 13 で停止）**。`web/` に MoonBit のプロジェクトを作り、後継の TEA ライブラリ `moonbit-community/rabbita` の最新版 0.17.0 を追加した（ビルドは通る）。ただし rabbita の通信の部品（`@http`）は、fetch に `credentials` を渡さず、利用側がヘッダーを足す口もなく、2xx 以外の応答の本文を捨てる。そのため、別オリジンの Web API への Cookie 付きの通信、CSRF 対策の専用ヘッダー（`X-Requested-With`）、409 の拒否の理由の受け取りができない。ヘッドレスの Chromium で実際に確かめた（下の「画面の TEA ライブラリの確認結果」）。TEA を自作しない方針のため、ここで止めて判断を仰いでいる |
+| Rust の業務の部品・データストア・Web API・静的ファイルサーバー（`crates/`） | 実装済み。テストはすべて成功 |
+| MoonBit の画面（`web/`） | 実装済み。コース一覧 → コースの詳細と日程の選択 → 購入確認 → 完了と e チケット、従業員の切り替え。更新関数のテストはすべて成功。説明は [web/README.md](web/README.md) |
 
-そのため `bash scripts/verify.sh` は、MoonBit の画面のテストの段階で失敗で終わります（成功と偽らないため）。画面ができるまでは、下の「デモの手順」のとおり `curl` で Web API を確かめられます。
-
-### 画面の TEA ライブラリの確認結果（2026-10-29、rabbita 0.17.0）
-
-| 確かめたこと | 結果 |
-| --- | --- |
-| rabbita の最新版の追加とビルド（`moon add moonbit-community/rabbita`、`moon build --target js`） | できる |
-| `@http.get` / `@http.post` で、画面（`http://localhost:8080`）から Web API（`http://localhost:3000`）へ Cookie を送る | **できない**。fetch の `credentials` が既定（same-origin）のままで、`Set-Cookie` も保存されない |
-| 書き込みの要求に `X-Requested-With: aidlc-handson-web` を付ける | **できない**。ヘッダーを指定する API がなく、Web API は 403 を返す |
-| 409（購入の拒否）の本文から拒否の理由を読む | **できない**。2xx 以外は `HTTP 409 Conflict` という文字列だけになる |
-| 対照: 同じページから素の `fetch`（`credentials: "include"`＋専用ヘッダー） | Cookie の発行・送信、従業員の切り替え、409 と理由の受け取りまですべて動く（Web API 側の CORS と CSRF 対策の設定は正しい） |
+画面の TEA の実行環境・描画・URL の扱いには `moonbit-community/rabbita` を、Web API との通信（Cookie 付きの fetch・専用ヘッダー・2xx 以外の本文の受け取り）には `mizchi/js_web` を使っています。rabbita 0.17.0 の通信の部品ではこれらができなかったためです（経緯は [web/README.md](web/README.md#通信に-mizchijs_web-を使う理由)）。
 
 ## 前提のツール
 
@@ -31,12 +21,10 @@
 | --- | --- | --- |
 | Rust（rustc・cargo・rustfmt・clippy） | 最新の stable（1.97.0 で確認） | <https://rustup.rs/> |
 | MoonBit（moon） | 最新版（moon 0.1.20261028・moonc v0.10.18 で確認） | `curl -fsSL https://cli.moonbitlang.com/install/unix.sh \| bash`（`~/.moon/bin` に入ります） |
-| Node.js | 22 系（v22.22.0 で確認） | **画面のテスト（`moon -C web test --target js`）の実行にだけ必要**。moon が JavaScript 向けのテストを `node` で動かすため。画面のビルドとブラウザでの実行には不要 |
+| Node.js | 22 系（v22.22.0 で確認） | **画面のテスト（`moon -C web test --target js`）の実行にだけ必要**。moon が JavaScript 向けのテストを `node` で動かすため（2026-10-29 に前提として承認）。画面のビルドとブラウザでの実行には不要 |
+| ブラウザ | 最新版の Chrome・Edge・Firefox・Safari | 画面を開くため |
 
-依存の crate は `Cargo.lock` でバージョンを固定しています。画面の依存（rabbita 0.17.0）は `web/moon.mod` で固定しています。
-
-> [!NOTE]
-> Node.js が画面のテストに必要なことは、要件 NFR9.1（前提のツールは Rust と MoonBit だけ）と食い違います。どう扱うかは判断待ちです。
+依存の crate は `Cargo.lock` で、画面の依存（rabbita 0.17.0・mizchi/js_web 0.13.1・mizchi/js_core 0.13.0）は `web/moon.mod` でバージョンを固定しています。
 
 ## リポジトリの構成
 
@@ -50,22 +38,29 @@ crates/
   in_memory_store/      アダプター: メモリ上のデータストアと初期データ
   web_api/              アダプター: Web API（実行ファイル。部品の組み立て）
   static_server/        画面用の静的ファイルサーバー（実行ファイル）
-scripts/verify.sh       確認コマンド
-web/                    MoonBit の画面のプロジェクト（rabbita を追加済み。画面は未実装。上の「現在の状況」を参照）
+web/                    アダプター: MoonBit の画面（TEA。説明は web/README.md）
+scripts/verify.sh       確認コマンド（fmt・clippy・テスト・画面のテストとビルド）
+scripts/build-web.sh    画面のビルド（web/dist に配信するファイルをそろえる）
+.githooks/              コミット前の確認（下の「コミット前の確認」）
+.github/workflows/      GitHub Copilot のコーディングエージェント向けの環境の準備
+AGENTS.md               AI のエージェント向けの案内（monorepo の構成と各部分の決まり）
 ```
 
-六角形アーキテクチャで、業務の 4 crate は HTTP・データ保存・画面に依存しません。依存の逆転はトレイトのオブジェクトではなく関数（クロージャ）の受け渡しで行い、現在時刻と乱数も関数として外から渡します。
+六角形アーキテクチャで、業務の 4 crate は HTTP・データ保存・画面に依存しません。依存の逆転はトレイトのオブジェクトではなく関数（クロージャ）の受け渡しで行い、現在時刻と乱数も関数として外から渡します。画面は The Elm Architecture（TEA）で、更新関数と描画関数を純粋関数にし、通信と URL の書き換えはコマンドとして外に出します。
 
 ## ビルドとテスト（リポジトリのルートで実行）
 
 ```bash
-# ビルド
+# Rust のビルド
 cargo build --workspace
+
+# 画面のビルド（web/dist に main.js・index.html・style.css・config.js をそろえる）
+bash scripts/build-web.sh
 
 # U1 の Rust のテスト（サーバーを起動せずに Web API もテストする）
 cargo test -p course_catalog -p eligibility -p training_budget -p purchasing -p in_memory_store -p web_api -p static_server
 
-# U1 の画面のテスト（画面の実装ができてから。Node.js が必要）
+# U1 の画面のテスト（更新関数のテスト。Node.js が必要）
 # この版の moon には `moon test --directory` がないため `-C` を使う
 moon -C web test --target js
 
@@ -78,14 +73,17 @@ bash scripts/verify.sh
 ## 起動（2 つのプロセス）
 
 ```bash
+# 0. 画面をビルドしておく（初回と、web/ を変えたとき）
+bash scripts/build-web.sh
+
 # 1. Web API（既定 http://localhost:3000）
 cargo run -p web_api
 
-# 2. 画面用の静的ファイルサーバー（既定 http://localhost:8080。web/dist/index.html が必要）
+# 2. 画面用の静的ファイルサーバー（既定 http://localhost:8080。別の端末で）
 cargo run -p static_server
 ```
 
-静的ファイルサーバーは、配信するディレクトリに `index.html` がないと理由を表示して終了します（画面は未実装のため、現時点では起動できません）。
+ブラウザで <http://localhost:8080/> を開きます。静的ファイルサーバーは、配信するディレクトリに `index.html` がないと理由を表示して終了します（先に `bash scripts/build-web.sh` を実行してください）。画面内の URL（`/courses/C001` など）を直接開いても、`index.html` が返って画面が復元されます。
 
 ### 環境変数
 
@@ -95,9 +93,23 @@ cargo run -p static_server
 | `UI_ORIGIN` | Web API | `http://localhost:8080` | 資格情報（Cookie）付きの通信と書き込みの要求を許可する画面のオリジン |
 | `STATIC_PORT` | 静的ファイルサーバー | `8080` | 待ち受けのポート |
 | `STATIC_DIR` | 静的ファイルサーバー | `web/dist` | 配信するディレクトリ |
-| `RUST_LOG` | 両方 | `info` | ログの詳しさ（開発中は `debug`） |
+| `RUST_LOG` | Web API・静的ファイルサーバー | `info` | ログの詳しさ（開発中は `debug`） |
+| `API_BASE` | 画面のビルド（`scripts/build-web.sh`） | `http://localhost:3000` | 画面が呼ぶ Web API のオリジン（`web/dist/config.js` に書き込む） |
+| `WEB_DIST` | 画面のビルド（`scripts/build-web.sh`） | `web/dist` | 画面のファイルをそろえるディレクトリ |
 
-秘密情報（パスワード・API キーなど）は使いません。
+ポートを変えるときは、`UI_ORIGIN`（Web API が許可する画面のオリジン）と `API_BASE`（画面が呼ぶ Web API）もあわせて変えます。秘密情報（パスワード・API キーなど）は使いません。
+
+## デモの手順（画面で）
+
+Web API と静的ファイルサーバーを起動し、<http://localhost:8080/> を開きます。
+
+1. **高橋 遥で購入する**: ヘッダーに「操作中の従業員: 高橋 遥（株式会社サンプル商事）」「残高: 60,000 pt」が出ます。「チームマネジメント入門」のカードを開き、「残席 3 席・状態: 購入可」の日程（S0001。日時は起動した日から 1 週間後）を選んで「購入確認へ進む」。購入確認で購入後の残高 35,000 pt を確かめて「購入を確定する」。完了画面に e チケット（チケット番号は `XXXX-XXXX`）が出て、ヘッダーの残高が 35,000 pt になります。同じコースの詳細を開き直すと、その日程は「状態: 購入済み」で選べません。
+2. **選べない日程**: 同じコースの「満席」「受付終了」の日程は、理由が文字で表示され、選べません（キーボードの矢印キーでも選択されません）。
+3. **残高不足**: ヘッダーの「従業員を切り替える」で鈴木 美咲（20,000 pt）に切り替えると、コース一覧へ戻ります。受講料 25,000 pt のコースの購入確認では「不足額 5,000 pt」が出て、確定ボタンは押せません。
+4. **契約外の企業**: 田中 一郎（旧契約産業株式会社・契約終了）に切り替えると、一覧・詳細・購入確認の上部に「ご所属の企業は現在このサービスをご利用いただけません」と出て、確定ボタンは押せません。閲覧は続けられます。
+5. **存在しないコース**: <http://localhost:8080/courses/C999> を開くと「コースが見つかりません」と「コース一覧へ戻る」が出ます。
+
+主要な流れ（一覧 → 詳細と日程の選択 → 購入確認 → 完了）は、全画面を読み込み直さずに画面内で移動します。Tab・Shift+Tab・Enter・Space・矢印キーだけでも操作できます。
 
 ## Web API
 
@@ -114,7 +126,7 @@ cargo run -p static_server
 
 書き込みの要求（`POST`）は、`Origin` が画面のオリジンで、かつ `X-Requested-With: aidlc-handson-web` が付いているときだけ受け付けます。満たさなければ 403 です。拒否の理由は `employee-not-found`・`company-not-active`・`session-not-found`・`closed`・`already-purchased`・`full`・`insufficient-balance` のどれか 1 つです。
 
-## デモの手順（画面ができるまでは curl で）
+### curl での確かめ方
 
 Web API を起動した別の端末で実行します。`cookies.txt` に Cookie を保存して、ブラウザと同じように従業員を引き継ぎます。
 
@@ -148,3 +160,13 @@ Web API を起動するたびに、起動した日（日本時間）を基準に
 - 従業員: 高橋 遥（E001・60,000 pt。Cookie がないときの操作中の従業員）、佐藤 健太（E002・残高ちょうど 25,000 pt）、鈴木 美咲（E003・20,000 pt）、田中 一郎（E004・契約終了の企業）ほか
 - コース: 4 カテゴリ・13 コース（オンラインと会場の両方）
 - 日程: 満席（S0002・S0011）、受付終了の過去の日程（S0003 など）、残席 1（S0005）、残席 3（S0001）、今後の開催予定がないコース（C012・C013）を含む
+
+## コミット前の確認
+
+`.githooks/pre-commit` は、コミットの前に `cargo fmt --all --check` と `moon -C web check` を行います。Git はフックの置き場所の設定をリポジトリに含めないため、各自の手元で 1 回だけ、リポジトリのルートで次を実行して有効にしてください。
+
+```bash
+git config core.hooksPath .githooks
+```
+
+clippy・テスト・画面のビルドまで含めたすべての確認は `bash scripts/verify.sh` で行います。詳しくは [.githooks/README.md](.githooks/README.md) を参照してください。

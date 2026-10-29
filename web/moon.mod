@@ -19,13 +19,14 @@ repository = ""
 
 license = "Apache-2.0"
 
-keywords = []
+keywords = [ ]
 
 preferred_target = "js"
 
-description = "研修コース e チケット購入サイトの画面（MoonBit・rabbita。U1 では Step 13 で停止中）"
+description = "研修コース e チケット購入サイトの画面（MoonBit・TEA。rabbita と mizchi/js_web）"
 
 import {
   "moonbit-community/rabbita@0.17.0",
   "mizchi/js_web@0.13.1",
+  "mizchi/js_core@0.13.0",
 }
