@@ -51,11 +51,22 @@
 
 - **Unit Gate Rhythm**: unit-end
 
-- **Parked**: 2026-10-28T13:44:15Z
 
-- **Parked At Stage**: functional-design
 
-- **Parked By**: person
+
+- **Skeleton Stance**: scope-dependent
+
+
+
+
+
+
+
+- **Active Unit**: u1-purchase-skeleton
+
+- **Unit Stage**: code-generation
+
+- **Unit State**: in-progress
 
 ## Phase Progress
 <!-- Status values: Pending, Active, Verified, Skipped -->
@@ -97,10 +108,10 @@
 ### CONSTRUCTION PHASE
 Per unit: [TBD]
 - [-] functional-design — EXECUTE
-- [ ] nfr-requirements — EXECUTE
+- [-] nfr-requirements — EXECUTE
 - [ ] nfr-design — SKIP
 - [ ] infrastructure-design — SKIP
-- [ ] code-generation — EXECUTE
+- [-] code-generation — EXECUTE
 - [ ] build-and-test — EXECUTE
 - [ ] ci-pipeline — SKIP
 
@@ -113,12 +124,20 @@ Per unit: [TBD]
 - [ ] performance-validation — SKIP
 - [ ] feedback-optimization — SKIP
 
+## Unit Progress
+<!-- Derived, engine-owned projection; routing ignores hand edits. -->
+| unit | owner | functional-design | nfr-requirements | code-generation | gate |
+| --- | --- | --- | --- | --- | --- |
+| u1-purchase-skeleton | - | [x] | [x] | [-] | [-] |
+| u2-course-search | - | [ ] | [ ] | [ ] | [ ] |
+| u3-my-tickets | - | [ ] | [ ] | [ ] | [ ] |
+
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
 - **Current Stage**: functional-design
 - **Next Stage**: nfr-requirements
 - **Status**: Running
-- **Last Updated**: 2026-10-28T13:44:15Z
+- **Last Updated**: 2026-10-29T07:44:45Z
 
 ## Session Resume Point
 - **Last Completed Stage**: delivery-planning
