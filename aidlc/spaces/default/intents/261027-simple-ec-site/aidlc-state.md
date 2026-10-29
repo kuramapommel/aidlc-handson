@@ -129,7 +129,7 @@ Per unit: [TBD]
 <!-- Derived, engine-owned projection; routing ignores hand edits. -->
 | unit | owner | functional-design | nfr-requirements | code-generation | gate |
 | --- | --- | --- | --- | --- | --- |
-| u1-purchase-skeleton | - | [x] | [x] | [x] | [?] |
+| u1-purchase-skeleton | - | [x] | [x] | [x] | [x] |
 | u2-course-search | - | [ ] | [ ] | [ ] | [ ] |
 | u3-my-tickets | - | [ ] | [ ] | [ ] | [ ] |
 
@@ -138,7 +138,7 @@ Per unit: [TBD]
 - **Current Stage**: functional-design
 - **Next Stage**: nfr-requirements
 - **Status**: Running
-- **Last Updated**: 2026-10-29T12:32:50Z
+- **Last Updated**: 2026-10-29T12:55:55Z
 
 ## Session Resume Point
 - **Last Completed Stage**: delivery-planning
