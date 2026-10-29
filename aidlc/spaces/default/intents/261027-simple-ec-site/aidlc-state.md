@@ -66,9 +66,13 @@
 
 - **Unit Stage**: code-generation
 
-- **Unit State**: in-progress
+- **Unit State**: paused
 
 
+
+- **Unit Pause Reason**: rabbita 0.17.0 の通信は Cookie 付きの別オリジン通信と専用ヘッダーに対応せず、409 の本文も捨てるため Step 13 で停止
+
+- **Unit Next Action**: 通信の扱い（A: rabbita の拡張口で通信のコマンドだけ作る / B: 同一オリジンの中継 / C: rabbita の対応を待つ / D: ライブラリの選び直し）と Node.js の扱いを決めてから Step 13 を再開する
 
 ## Phase Progress
 <!-- Status values: Pending, Active, Verified, Skipped -->
@@ -139,7 +143,7 @@ Per unit: [TBD]
 - **Current Stage**: functional-design
 - **Next Stage**: nfr-requirements
 - **Status**: Running
-- **Last Updated**: 2026-10-29T09:43:22Z
+- **Last Updated**: 2026-10-29T09:51:25Z
 
 ## Session Resume Point
 - **Last Completed Stage**: delivery-planning

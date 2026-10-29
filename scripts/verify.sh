@@ -42,9 +42,16 @@ if ! command -v moon >/dev/null 2>&1; then
   fail "MoonBit のツール（moon）が見つかりません。README の「前提のツール」に従って導入してください"
 fi
 if [ ! -f web/moon.mod ] && [ ! -f web/moon.mod.json ]; then
-  fail "画面のプロジェクト（web/ の moon.mod）がありません。画面（MoonBit・rabbit-tea）はまだ作られていません"
+  fail "画面のプロジェクト（web/ の moon.mod）がありません。画面（MoonBit・rabbita）はまだ作られていません"
 fi
-moon test --directory web || fail "MoonBit のテストが失敗しました"
+# 画面の更新関数のテスト（*_test.mbt・*_wbtest.mbt）が 1 つもなければ、0 件の成功を成功と扱わない
+if ! grep -rqE --include='*_test.mbt' --include='*_wbtest.mbt' \
+  --exclude-dir=.mooncakes --exclude-dir=_build '^(async )?test ' web; then
+  fail "画面の更新関数のテストがありません。画面（Step 14〜16）は rabbita の通信の機能が足りないため止めています（README の「現在の状況」を参照）"
+fi
+# この版の moon には `moon test --directory` がないため、`-C` でプロジェクトのディレクトリを指定する。
+# JavaScript 向けのテストの実行には Node.js が要る（README の「前提のツール」を参照）
+moon -C web test --target js || fail "MoonBit のテストが失敗しました"
 
 step "5/5 画面のビルド（scripts/build-web.sh）"
 if [ ! -f scripts/build-web.sh ]; then

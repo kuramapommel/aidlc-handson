@@ -11,18 +11,32 @@
 | 部分 | 状況 |
 | --- | --- |
 | Rust の業務の部品・データストア・Web API・静的ファイルサーバー | 実装済み。テストはすべて成功 |
-| MoonBit の画面（`web/`） | **未実装**。画面の TEA のライブラリとして決めた rabbit-tea が、MoonBit のパッケージの登録先ですべての版が取り下げ（後継は `moonbit-community/rabbita`）になっており、さらにこの環境ではパッケージの取得先 `download.mooncakes.io` への接続が許可されていないため、作業を止めて判断を仰いでいます |
+| MoonBit の画面（`web/`） | **未実装（Step 13 で停止）**。`web/` に MoonBit のプロジェクトを作り、後継の TEA ライブラリ `moonbit-community/rabbita` の最新版 0.17.0 を追加した（ビルドは通る）。ただし rabbita の通信の部品（`@http`）は、fetch に `credentials` を渡さず、利用側がヘッダーを足す口もなく、2xx 以外の応答の本文を捨てる。そのため、別オリジンの Web API への Cookie 付きの通信、CSRF 対策の専用ヘッダー（`X-Requested-With`）、409 の拒否の理由の受け取りができない。ヘッドレスの Chromium で実際に確かめた（下の「画面の TEA ライブラリの確認結果」）。TEA を自作しない方針のため、ここで止めて判断を仰いでいる |
 
 そのため `bash scripts/verify.sh` は、MoonBit の画面のテストの段階で失敗で終わります（成功と偽らないため）。画面ができるまでは、下の「デモの手順」のとおり `curl` で Web API を確かめられます。
+
+### 画面の TEA ライブラリの確認結果（2026-10-29、rabbita 0.17.0）
+
+| 確かめたこと | 結果 |
+| --- | --- |
+| rabbita の最新版の追加とビルド（`moon add moonbit-community/rabbita`、`moon build --target js`） | できる |
+| `@http.get` / `@http.post` で、画面（`http://localhost:8080`）から Web API（`http://localhost:3000`）へ Cookie を送る | **できない**。fetch の `credentials` が既定（same-origin）のままで、`Set-Cookie` も保存されない |
+| 書き込みの要求に `X-Requested-With: aidlc-handson-web` を付ける | **できない**。ヘッダーを指定する API がなく、Web API は 403 を返す |
+| 409（購入の拒否）の本文から拒否の理由を読む | **できない**。2xx 以外は `HTTP 409 Conflict` という文字列だけになる |
+| 対照: 同じページから素の `fetch`（`credentials: "include"`＋専用ヘッダー） | Cookie の発行・送信、従業員の切り替え、409 と理由の受け取りまですべて動く（Web API 側の CORS と CSRF 対策の設定は正しい） |
 
 ## 前提のツール
 
 | ツール | バージョン | 導入 |
 | --- | --- | --- |
 | Rust（rustc・cargo・rustfmt・clippy） | 最新の stable（1.97.0 で確認） | <https://rustup.rs/> |
-| MoonBit（moon） | 最新版（moon 0.1.20261028 で確認） | `curl -fsSL https://cli.moonbitlang.com/install/unix.sh \| bash`（`~/.moon/bin` に入ります） |
+| MoonBit（moon） | 最新版（moon 0.1.20261028・moonc v0.10.18 で確認） | `curl -fsSL https://cli.moonbitlang.com/install/unix.sh \| bash`（`~/.moon/bin` に入ります） |
+| Node.js | 22 系（v22.22.0 で確認） | **画面のテスト（`moon -C web test --target js`）の実行にだけ必要**。moon が JavaScript 向けのテストを `node` で動かすため。画面のビルドとブラウザでの実行には不要 |
 
-依存の crate は `Cargo.lock` でバージョンを固定しています。
+依存の crate は `Cargo.lock` でバージョンを固定しています。画面の依存（rabbita 0.17.0）は `web/moon.mod` で固定しています。
+
+> [!NOTE]
+> Node.js が画面のテストに必要なことは、要件 NFR9.1（前提のツールは Rust と MoonBit だけ）と食い違います。どう扱うかは判断待ちです。
 
 ## リポジトリの構成
 
@@ -37,7 +51,7 @@ crates/
   web_api/              アダプター: Web API（実行ファイル。部品の組み立て）
   static_server/        画面用の静的ファイルサーバー（実行ファイル）
 scripts/verify.sh       確認コマンド
-web/                    MoonBit の画面のプロジェクト（未作成。上の「現在の状況」を参照）
+web/                    MoonBit の画面のプロジェクト（rabbita を追加済み。画面は未実装。上の「現在の状況」を参照）
 ```
 
 六角形アーキテクチャで、業務の 4 crate は HTTP・データ保存・画面に依存しません。依存の逆転はトレイトのオブジェクトではなく関数（クロージャ）の受け渡しで行い、現在時刻と乱数も関数として外から渡します。
@@ -51,8 +65,9 @@ cargo build --workspace
 # U1 の Rust のテスト（サーバーを起動せずに Web API もテストする）
 cargo test -p course_catalog -p eligibility -p training_budget -p purchasing -p in_memory_store -p web_api -p static_server
 
-# U1 の画面のテスト（画面のプロジェクトができてから）
-moon test --directory web
+# U1 の画面のテスト（画面の実装ができてから。Node.js が必要）
+# この版の moon には `moon test --directory` がないため `-C` を使う
+moon -C web test --target js
 
 # 確認コマンド: fmt → clippy（警告はエラー）→ cargo test → moon test → 画面のビルド
 bash scripts/verify.sh
