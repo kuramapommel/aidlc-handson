@@ -1,0 +1,12 @@
+[package]
+name = "course_catalog"
+description = "業務の部品 CourseCatalog: コースと日程、日程の状態、コース一覧の集計（純粋関数）"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+chrono = { version = "0.4.45", default-features = false, features = ["std"] }

@@ -1,0 +1,15 @@
+[package]
+name = "purchasing"
+description = "業務の部品 Purchasing: 購入の決定とチケット（純粋関数）"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+chrono = { version = "0.4.45", default-features = false, features = ["std"] }
+course_catalog = { version = "0.1.0", path = "../course_catalog" }
+eligibility = { version = "0.1.0", path = "../eligibility" }
+training_budget = { version = "0.1.0", path = "../training_budget" }

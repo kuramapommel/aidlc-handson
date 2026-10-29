@@ -23,3 +23,12 @@ aidlc/spaces/*/intents/*/.aidlc-*
 aidlc/diagnostics/
 .claude/settings.local.json
 # END AI-DLC:gitignore
+
+# Rust のビルド結果
+/target/
+
+# MoonBit のビルド結果と取得したパッケージ
+/web/_build/
+/web/target/
+/web/.mooncakes/
+/web/dist/
