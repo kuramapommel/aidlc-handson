@@ -17,6 +17,13 @@ pub fn init_model() -> Model {
     notice: None,
     purchase: Idle,
     ticket: NotAsked,
+    search_input: default_search_input(),
+    period_error: None,
+    keyword_debounce: 0,
+    search_request_seq: 0,
+    latest_request_unconditioned: true,
+    last_results: None,
+    condition_errors: None,
   }
 }
 
@@ -135,14 +142,9 @@ pub fn update(model : Model, msg : Msg) -> (Model, Array[Effect]) {
         (model, [])
       }
     RetryMe => ({ ..model, me: Loading, }, [FetchMe(generation)])
-    CourseListLoaded(from, result) =>
-      if from == generation && model.route is CourseListPage {
-        ({ ..model, course_list: to_remote(result), }, [])
-      } else {
-        (model, [])
-      }
-    RetryCourseList =>
-      ({ ..model, course_list: Loading, }, [FetchCourses(generation)])
+    CourseListLoaded(from, result) => on_course_list_loaded(model, from, result)
+    // 一覧の「再試行」は今の探索条件で送り直す（条件なしなら U1 と同じ要求。BR11.7）
+    RetryCourseList | RetrySearch => on_retry_search(model)
     CourseDetailLoaded(from, course_id, result) =>
       on_course_detail_loaded(model, from, course_id, result)
     RetryCourseDetail =>
@@ -248,23 +250,71 @@ pub fn update(model : Model, msg : Msg) -> (Model, Array[Effect]) {
         )
       }
     EmployeeSwitched(result) => on_employee_switched(model, result)
+    // ---- U2: コース一覧の探索（update_search.mbt） ----
+    KeywordChanged(keyword) => on_keyword_changed(model, keyword)
+    KeywordSettled(ticket) => on_keyword_settled(model, ticket)
+    CategoryChanged(value) =>
+      if value == "" || is_category_value(value) {
+        apply_search_input(model, { ..model.search_input, category: value, })
+      } else {
+        (model, [])
+      }
+    AvailableOnlyChanged(checked) =>
+      apply_search_input(model, {
+        ..model.search_input,
+        available_only: checked,
+      })
+    PeriodChanged(from, to) => {
+      // 日付の入力欄は空か正しい日付だけを返す。それ以外の値は指定なしとして扱う
+      let date_or_empty = (text : String) => {
+        if is_calendar_date(text) {
+          text
+        } else {
+          ""
+        }
+      }
+      apply_search_input(model, {
+        ..model.search_input,
+        period_from: date_or_empty(from),
+        period_to: date_or_empty(to),
+      })
+    }
+    SortChanged(value) =>
+      match sort_from_value(value) {
+        Some(sort) => apply_search_input(model, { ..model.search_input, sort, })
+        None => (model, [])
+      }
+    SearchLoaded(from, seq, result) =>
+      on_search_loaded(model, from, seq, result)
+    ResetConditions => on_reset_conditions(model)
   }
 }
 
 ///|
 /// URL が変わったとき。最初の 1 回（me が未取得）は起動（AppStarted）として、操作中の従業員も取得する。
 /// 同じ画面への URL の変化（更新関数が自分で移動と取得を済ませたとき）は何もしない。
+/// コース一覧の URL（`/?q=…`）では、クエリから探索条件を復元する（U2 の BR11.4・BR11.8）。
 fn on_url_changed(model : Model, path : String) -> (Model, Array[Effect]) {
   let route = route_from_path(path)
   let is_starting = model.me is NotAsked
-  if !is_starting && route == model.route {
+  let (base, rewrite) = if route is CourseListPage {
+    match restore_list_from_url(model, path, is_starting) {
+      Some(restored) => restored
+      None => return (model, [])
+    }
+  } else if !is_starting && route == model.route {
     return (model, [])
-  }
-  let (entered, effects) = enter_route({ ..model, route, }, route)
-  if is_starting {
-    ({ ..entered, me: Loading, }, [FetchMe(model.generation), ..effects])
   } else {
-    (entered, effects)
+    (model, [])
+  }
+  let (entered, effects) = enter_route({ ..base, route, }, route)
+  if is_starting {
+    (
+      { ..entered, me: Loading, },
+      [FetchMe(model.generation), ..effects, ..rewrite],
+    )
+  } else {
+    (entered, [..effects, ..rewrite])
   }
 }
 
@@ -273,11 +323,9 @@ fn on_url_changed(model : Model, path : String) -> (Model, Array[Effect]) {
 fn enter_route(model : Model, route : Route) -> (Model, Array[Effect]) {
   let generation = model.generation
   match route {
+    // 今の探索条件で一覧を取得する（条件なしなら U1 と同じ FetchCourses）
     CourseListPage =>
-      (
-        { ..model, course_list: Loading, purchase: Idle, notice: None, },
-        [FetchCourses(generation)],
-      )
+      request_course_list({ ..model, purchase: Idle, notice: None, })
     CourseDetailPage(course_id) =>
       (
         { ..model, course_detail: Loading, purchase: Idle, notice: None, },
@@ -458,7 +506,7 @@ fn on_choose_another_session(model : Model) -> (Model, Array[Effect]) {
 
 ///|
 /// 従業員の切り替えの結果。成功なら前の従業員の情報を捨て、どの画面からでもコース一覧へ戻る（BR6.4）。
-/// 失敗なら操作中の従業員は変えず、失敗を案内する。
+/// 探索条件も既定に戻す（前の従業員の操作を残さない。U2）。失敗なら操作中の従業員は変えず、失敗を案内する。
 fn on_employee_switched(
   model : Model,
   result : Result[Me, FetchError],
@@ -478,6 +526,14 @@ fn on_employee_switched(
           notice: None,
           purchase: Idle,
           ticket: NotAsked,
+          search_input: default_search_input(),
+          period_error: None,
+          // 待っているキーワードの送信と、前の従業員の探索の応答を無効にする
+          keyword_debounce: model.keyword_debounce + 1,
+          search_request_seq: model.search_request_seq + 1,
+          latest_request_unconditioned: true,
+          last_results: None,
+          condition_errors: None,
         },
         [PushUrl(route_to_path(CourseListPage)), FetchCourses(generation)],
       )

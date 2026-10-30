@@ -37,8 +37,8 @@ pub struct CourseDetail {
     pub sessions: Vec<SessionView>,
 }
 
-/// 1 つのコースの一覧の行を集計する（BR3.1、BR3.2）。
-fn summarize_course<F>(
+/// 1 つのコースの一覧の行を集計する（BR3.1、BR3.2）。探索（U2）でも同じ集計を使う。
+pub(crate) fn summarize_course<F>(
     course: &Course,
     sessions: &[Session],
     issued_count: &F,
@@ -64,7 +64,8 @@ where
 }
 
 /// 既定の並び（BR3.3）: 直近の開催日の昇順、同値はコース ID の昇順、予定なしは最後。
-fn default_order(a: &CourseListRow, b: &CourseListRow) -> Ordering {
+/// 探索の「開催日が近い順」（U2 の BR10.1）も同じ並び。
+pub(crate) fn default_order(a: &CourseListRow, b: &CourseListRow) -> Ordering {
     match (a.next_session_starts_at, b.next_session_starts_at) {
         (Some(x), Some(y)) => x.cmp(&y).then_with(|| a.course.id.cmp(&b.course.id)),
         (Some(_), None) => Ordering::Less,

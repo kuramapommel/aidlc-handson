@@ -5,6 +5,7 @@ import {
   "moonbit-community/rabbita",
   "moonbit-community/rabbita/cmd",
   "moonbit-community/rabbita/html",
+  "moonbit-community/rabbita/url",
   "moonbitlang/core/debug",
 }
 
@@ -12,6 +13,10 @@ import {
 pub fn app(api_base~ : String) -> @rabbita.App
 
 pub fn category_label(String) -> String
+
+pub let category_values : Array[String]
+
+pub fn condition_field_label(String) -> String
 
 pub fn confirm_readiness(Model) -> Readiness
 
@@ -29,9 +34,13 @@ pub fn decode_employees(ApiResponse) -> Result[Array[Employee], FetchError]
 
 pub fn decode_me(ApiResponse) -> Result[Me, FetchError]
 
+pub fn decode_search_response(ApiResponse) -> Result[CourseList, SearchFailure]
+
 pub fn decode_ticket(ApiResponse) -> Result[Ticket, FetchError]
 
 pub let default_api_base : String
+
+pub fn default_search_input() -> SearchInput
 
 pub fn delivery_format_label(String) -> String
 
@@ -57,7 +66,29 @@ pub fn format_session_time(String, String) -> String
 
 pub fn init_model() -> Model
 
+pub fn is_calendar_date(String) -> Bool
+
+pub fn is_category_value(String) -> Bool
+
+pub fn is_period_reversed(SearchInput) -> Bool
+
+pub let keyword_debounce_ms : Int32
+
+pub fn list_path(SearchInput) -> String
+
+pub fn location_of(@url.Url) -> String
+
+pub fn parse_query(String) -> Array[(String, String)]
+
+pub fn percent_decode(String) -> String
+
+pub fn percent_encode(String) -> String
+
+pub let period_error_message : String
+
 pub fn purchase_message(Int32, ApiResponse) -> Msg
+
+pub fn query_of(String) -> String
 
 pub fn rejection_message(RejectionReason) -> String
 
@@ -69,13 +100,29 @@ pub fn request_cmd(HttpMethod, String, String?, (Result[ApiResponse, String]) ->
 
 pub fn request_headers(HttpMethod) -> Map[String, String]
 
+pub fn restore_search_input(String) -> SearchInput
+
 pub fn route_from_path(String) -> Route
 
 pub fn route_to_path(Route) -> String
 
+pub fn search_params(SearchInput) -> Array[(String, String)]
+
+pub fn search_query_string(SearchInput) -> String
+
+pub fn search_result(Result[ApiResponse, String]) -> Result[CourseList, SearchFailure]
+
 pub fn session_status_from_string(String) -> SessionStatus
 
 pub fn session_status_label(SessionStatus) -> String
+
+pub fn sort_from_value(String) -> SortOrder?
+
+pub fn sort_label(SortOrder) -> String
+
+pub let sort_orders : Array[SortOrder]
+
+pub fn sort_value(SortOrder) -> String
 
 pub fn unavailable_notice(Session?) -> String
 
@@ -97,6 +144,11 @@ pub(all) enum BlockReason {
   NotEligible
   Unavailable(SessionStatus)
   InsufficientBalance(Int32)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ConditionFieldError {
+  field : String
+  reason : String
 } derive(Eq, @debug.Debug)
 
 pub(all) struct ConfirmSummary {
@@ -148,6 +200,8 @@ pub(all) enum Effect {
   PushUrl(String)
   ReplaceUrl(String)
   LoadUrl(String)
+  SearchCourses(Int32, Int32, SearchInput)
+  WaitKeyword(Int32)
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Eligibility {
@@ -198,6 +252,13 @@ pub(all) struct Model {
   notice : String?
   purchase : PurchaseState
   ticket : Remote[Ticket]
+  search_input : SearchInput
+  period_error : String?
+  keyword_debounce : Int32
+  search_request_seq : Int32
+  latest_request_unconditioned : Bool
+  last_results : CourseList?
+  condition_errors : Array[ConditionFieldError]?
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Msg {
@@ -227,6 +288,15 @@ pub(all) enum Msg {
   EmployeesLoaded(Result[Array[Employee], FetchError])
   EmployeeChosen(String)
   EmployeeSwitched(Result[Me, FetchError])
+  KeywordChanged(String)
+  KeywordSettled(Int32)
+  CategoryChanged(String)
+  AvailableOnlyChanged(Bool)
+  PeriodChanged(String, String)
+  SortChanged(String)
+  SearchLoaded(Int32, Int32, Result[CourseList, SearchFailure])
+  ResetConditions
+  RetrySearch
 } derive(Eq, @debug.Debug)
 
 pub(all) enum PurchaseState {
@@ -271,6 +341,20 @@ pub(all) enum Route {
   NotFoundPage
 } derive(Eq, @debug.Debug)
 
+pub(all) enum SearchFailure {
+  InvalidCondition(Array[ConditionFieldError])
+  FetchFailed(FetchError)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SearchInput {
+  keyword : String
+  category : String
+  available_only : Bool
+  period_from : String
+  period_to : String
+  sort : SortOrder
+} derive(Eq, @debug.Debug)
+
 pub(all) struct Session {
   session_id : String
   starts_at : String
@@ -287,6 +371,13 @@ pub(all) enum SessionStatus {
   Closed
   Purchased
   OtherStatus(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SortOrder {
+  ByDate
+  ByFeeAsc
+  ByFeeDesc
+  ByName
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Switcher {

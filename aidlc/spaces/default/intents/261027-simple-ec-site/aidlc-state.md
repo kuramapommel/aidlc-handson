@@ -75,11 +75,8 @@
 
 
 
-- **Active Unit**: u2-course-search
 
-- **Unit Stage**: code-generation
 
-- **Unit State**: in-progress
 
 ## Phase Progress
 <!-- Status values: Pending, Active, Verified, Skipped -->
@@ -150,7 +147,7 @@ Per unit: [TBD]
 - **Current Stage**: functional-design
 - **Next Stage**: nfr-requirements
 - **Status**: Running
-- **Last Updated**: 2026-10-30T09:26:08Z
+- **Last Updated**: 2026-10-30T11:22:14Z
 
 ## Session Resume Point
 - **Last Completed Stage**: delivery-planning

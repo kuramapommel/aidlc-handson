@@ -82,7 +82,7 @@ pub(all) struct CourseRow {
 } derive(Eq, Debug)
 
 ///|
-/// コース一覧（U2 で探索条件を足すときは、この型に条件の項目を加える）。
+/// コース一覧（探索の結果も同じ形。件数は条件に合うコースの数）。
 pub(all) struct CourseList {
   courses : Array[CourseRow]
   count : Int32
@@ -193,6 +193,22 @@ pub(all) struct Model {
   notice : String?
   purchase : PurchaseState
   ticket : Remote[Ticket]
+  // ---- U2: コース一覧の探索（frontend-components.md の 2 節） ----
+  /// 探索条件の入力欄の今の値
+  search_input : SearchInput
+  /// 期間の前後が逆のときの案内（BR11.5）
+  period_error : String?
+  /// キーワードの入力ごとに進める番号。待ち終わりの番号がこれと同じときだけ送る（BR11.1）
+  keyword_debounce : Int32
+  /// 一覧の要求を送るたびに進める番号。応答の番号がこれと同じときだけ反映する（BR11.2）
+  search_request_seq : Int32
+  /// 最後に送った一覧の要求が条件なし（U1 と同じ `FetchCourses`）だったか。
+  /// 条件なしの応答（CourseListLoaded）は番号を持たないため、これが真のときだけ反映する
+  latest_request_unconditioned : Bool
+  /// 最後に表示できた一覧（400 のときに一覧をそれまでのままにするため。BR11.9）
+  last_results : CourseList?
+  /// 万一の 400 の案内（不正な条件の一覧。BR11.9）
+  condition_errors : Array[ConditionFieldError]?
 } derive(Eq, Debug)
 
 ///|
@@ -228,6 +244,22 @@ pub(all) enum Msg {
   EmployeesLoaded(Result[Array[Employee], FetchError])
   EmployeeChosen(String)
   EmployeeSwitched(Result[Me, FetchError])
+  // ---- U2: コース一覧の探索（frontend-components.md の 4 節） ----
+  /// キーワードの入力（打ったとおりの文字列）
+  KeywordChanged(String)
+  /// キーワードの待ちが終わった（待ちの番号）
+  KeywordSettled(Int32)
+  /// カテゴリの選択（値。空は「すべて」）
+  CategoryChanged(String)
+  AvailableOnlyChanged(Bool)
+  /// 期間の入力（開始日, 終了日。空は指定なし）
+  PeriodChanged(String, String)
+  /// 並べ替えの選択（値）
+  SortChanged(String)
+  /// 探索の応答（従業員の世代, 要求の番号, 結果）
+  SearchLoaded(Int32, Int32, Result[CourseList, SearchFailure])
+  ResetConditions
+  RetrySearch
 } derive(Eq, Debug)
 
 ///|
@@ -244,4 +276,9 @@ pub(all) enum Effect {
   PushUrl(String)
   ReplaceUrl(String)
   LoadUrl(String)
+  /// 探索条件付きのコース一覧の要求（従業員の世代, 要求の番号, 条件）。
+  /// 条件なしの一覧は U1 と同じ FetchCourses で要求する
+  SearchCourses(Int32, Int32, SearchInput)
+  /// キーワードの待ち（keyword_debounce_ms 後に KeywordSettled(番号) を届ける。BR11.1）
+  WaitKeyword(Int32)
 } derive(Eq, Debug)

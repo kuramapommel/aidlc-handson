@@ -10,6 +10,7 @@ import {
   "mizchi/js_web/http" @fetch,
   "mizchi/js_core" @js,
   "moonbitlang/core/json",
+  "moonbitlang/core/encoding/utf8",
 }
 
 supported_targets = "js"

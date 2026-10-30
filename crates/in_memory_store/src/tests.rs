@@ -63,6 +63,7 @@ fn contention_state(employees: usize, capacity: u32) -> StoreState {
         courses: vec![Course {
             id: CourseId::parse("C001").unwrap(),
             title: "チームマネジメント入門".into(),
+            title_reading: "ちーむまねじめんとにゅうもん".into(),
             category: Category::Management,
             summary: "概要".into(),
             description: "説明".into(),
@@ -316,4 +317,88 @@ fn seed_data_covers_the_fr7_2_kinds() {
     }
     // 同じ時刻なら毎回同じデータになる（NFR8.4）
     assert_eq!(seed_state(now), state);
+}
+
+// ---------- U2: よみがな（BR10.4）と探索の確認用のデータ（functional-spec.md 6 節） ----------
+
+#[test]
+fn reading_exists_for_every_seed_course_in_the_allowed_form() {
+    let state = seed_state(fixed_now());
+    for course in &state.courses {
+        let reading = &course.title_reading;
+        let length = reading.chars().count();
+        assert!(
+            (1..=120).contains(&length),
+            "{}: よみがなは 1〜120 文字",
+            course.id
+        );
+        assert!(
+            course_catalog::is_valid_reading(reading),
+            "{}: よみがな {reading:?} にひらがな・長音符・英数字・空白以外の文字がある",
+            course.id
+        );
+        // 英字の部分も読みに直している（初期データでは英字を使わない）
+        assert!(
+            !reading.chars().any(|c| c.is_ascii_alphabetic()),
+            "{}: 英字は読みに直す",
+            course.id
+        );
+    }
+    // 形の検証は、よみがなの違反を見つける（境目: 空・カタカナ・漢字）
+    let mut course = state.courses[0].clone();
+    for bad in ["", "チームマネジメント", "研修"] {
+        course.title_reading = bad.into();
+        assert!(validate_course(&course).is_err(), "{bad:?} は不正なはず");
+    }
+}
+
+#[test]
+fn reading_seed_has_the_search_fixtures() {
+    let now = fixed_now();
+    let state = seed_state(now);
+    let counts = issued_counts(&state.tickets);
+    let issued = issued_counter(&counts);
+    let upcoming = |course: &Course| -> Vec<&Session> {
+        state
+            .sessions
+            .iter()
+            .filter(|s| s.course_id == course.id && s.starts_at > now)
+            .collect()
+    };
+    // 今後の日程が満席だけのコース（C014）がある
+    let full_only = state.courses.iter().any(|c| {
+        let sessions = upcoming(c);
+        !sessions.is_empty()
+            && sessions
+                .iter()
+                .all(|s| session_status(s, issued(&s.id), now) == SessionStatus::Full)
+    });
+    assert!(full_only, "満席だけのコースがない");
+    // 受付終了の日程にだけ空席が残るコース（C012）がある
+    let closed_only = state.courses.iter().any(|c| {
+        upcoming(c).is_empty()
+            && state
+                .sessions
+                .iter()
+                .any(|s| s.course_id == c.id && s.starts_at <= now && s.capacity > issued(&s.id))
+    });
+    assert!(closed_only, "受付終了の日程にだけ空席があるコースがない");
+    // 同じ受講料のコース、同じ直近の開催日時のコースがある
+    let rows = list_courses(&state.courses, &state.sessions, &issued, now);
+    let has_duplicate = |values: Vec<String>| {
+        let unique: HashSet<&String> = values.iter().collect();
+        unique.len() < values.len()
+    };
+    assert!(has_duplicate(
+        state
+            .courses
+            .iter()
+            .map(|c| c.fee_points.to_string())
+            .collect()
+    ));
+    assert!(has_duplicate(
+        rows.iter()
+            .filter_map(|r| r.next_session_starts_at.map(|d| d.to_rfc3339()))
+            .collect()
+    ));
 }

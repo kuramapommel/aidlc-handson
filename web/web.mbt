@@ -70,20 +70,42 @@ pub fn effect_to_cmd(
     PushUrl(path) => @nav.push_url(path)
     ReplaceUrl(path) => @nav.replace_url(path)
     LoadUrl(url) => @nav.load(url)
+    // 探索の要求（U2）。応答に要求の番号を結び付けて返す（BR11.2）
+    SearchCourses(generation, seq, input) =>
+      request_cmd(
+        Get,
+        api_base + "/api/courses" + search_query_string(input),
+        None,
+        result => emit(SearchLoaded(generation, seq, search_result(result))),
+      )
+    // キーワードの待ち（rabbita の @cmd.delay。更新関数はタイマーを使わない。NFR6.2）
+    WaitKeyword(ticket) =>
+      @cmd.delay(emit(KeywordSettled(ticket)), keyword_debounce_ms)
+  }
+}
+
+///|
+/// rabbita の URL を、画面内の URL の文字列（`/パス?クエリ`）にする。
+/// コース一覧の探索条件はクエリにあるため、クエリも残す（U2 の BR11.4）。
+pub fn location_of(url : @url.Url) -> String {
+  match url.query {
+    Some(query) if query != "" => "/" + url.path + "?" + query
+    _ => "/" + url.path
   }
 }
 
 ///|
 /// URL の変化と画面内のリンクの押下を受け取る（起動時の URL も UrlChanged で届く）。
+/// `@nav.replace_url`・`@nav.push_url` の後にも UrlChanged が届く（rabbita の動き）。
 fn subscriptions(emit : @cmd.Emit[Msg]) -> @sub.Sub {
   @sub.batch([
     @sub.on_url_changed(
-      emit.map((url : @url.Url) => UrlChanged("/" + url.path)),
+      emit.map((url : @url.Url) => UrlChanged(location_of(url))),
     ),
     @sub.on_url_request(
       emit.map((request : @url.UrlRequest) => {
         match request {
-          Internal(url) => LinkClicked("/" + url.path)
+          Internal(url) => LinkClicked(location_of(url))
           External(href) => ExternalLinkClicked(href)
         }
       }),

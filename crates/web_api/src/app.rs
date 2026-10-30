@@ -10,7 +10,7 @@ use std::time::Duration;
 
 use axum::Router;
 use axum::body::{Body, Bytes};
-use axum::extract::{Path, Request};
+use axum::extract::{Path, Query, Request};
 use axum::http::{HeaderName, Method, StatusCode, header::CONTENT_TYPE};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
@@ -143,7 +143,9 @@ where
 
     let list_courses = {
         let (read, now) = (read.clone(), now.clone());
-        move || ready(handlers::list_courses(&read(), now()).into_response())
+        move |Query(query): Query<Vec<(String, String)>>| {
+            ready(course_list_response(&read(), &query, now()))
+        }
     };
     let course_detail = {
         let (read, now) = (read.clone(), now.clone());
@@ -209,6 +211,38 @@ where
                 .on_request(())
                 .on_response(log_response),
         )
+}
+
+/// `GET /api/courses`: クエリがなければ U1 と同じ一覧（BR3.3）、あれば探索（U2）。
+///
+/// ログにはクエリの値（キーワードや日付の文字列）を出さない（NFR10.1、NFR10.2）。
+/// 400 は不正な項目名だけを情報レベルで、探索の件数と処理時間は詳細レベルでだけ出す（NFR10.3）。
+fn course_list_response(
+    state: &StoreState,
+    query: &[(String, String)],
+    now: DateTime<Utc>,
+) -> Response {
+    if query.is_empty() {
+        return handlers::list_courses(state, now).into_response();
+    }
+    let started = std::time::Instant::now();
+    match handlers::search_courses(state, query, now) {
+        Ok(json) => {
+            tracing::debug!(
+                count = json.count,
+                elapsed_us = started.elapsed().as_micros(),
+                "コース一覧を探索しました"
+            );
+            json.into_response()
+        }
+        Err(error) => {
+            if let ApiError::InvalidSearchCondition(errors) = &error {
+                let fields: Vec<&str> = errors.iter().map(|e| e.field.as_str()).collect();
+                tracing::info!(fields = %fields.join(","), "探索条件が不正です");
+            }
+            error.into_response()
+        }
+    }
 }
 
 /// `GET /api/me`: Cookie がなければ先頭の従業員の Cookie を発行してその従業員を返す（BR6.2）。
