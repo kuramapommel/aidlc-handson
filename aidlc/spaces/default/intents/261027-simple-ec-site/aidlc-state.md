@@ -139,7 +139,7 @@ Per unit: [TBD]
 | unit | owner | functional-design | nfr-requirements | code-generation | gate |
 | --- | --- | --- | --- | --- | --- |
 | u1-purchase-skeleton | - | [x] | [x] | [x] | [x] |
-| u2-course-search | - | [x] | [x] | [-] | [-] |
+| u2-course-search | - | [x] | [x] | [x] | [?] |
 | u3-my-tickets | - | [ ] | [ ] | [ ] | [ ] |
 
 ## Current Status
@@ -147,7 +147,7 @@ Per unit: [TBD]
 - **Current Stage**: functional-design
 - **Next Stage**: nfr-requirements
 - **Status**: Running
-- **Last Updated**: 2026-10-30T11:22:14Z
+- **Last Updated**: 2026-10-30T11:22:24Z
 
 ## Session Resume Point
 - **Last Completed Stage**: delivery-planning
