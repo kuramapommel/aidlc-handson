@@ -1,6 +1,6 @@
 # セキュリティの要件（U2 コース探索）
 
-要件定義書（`../../../inception/requirements-analysis/requirements.md`）の NFR3（セキュリティ）を、U2 の探索に当てはめて具体化する。U1 の要件（`../../u1-purchase-skeleton/nfr-requirements/security-requirements.md`。Cookie・CSRF 対策・CORS など）はそのまま引き継ぐ。探索は読み出しだけで、データを変えない。
+要件定義書（`../../../inception/requirements-analysis/requirements.md`）の NFR3（セキュリティ）を、U2 の探索に当てはめて具体化する。U1 の要件（`../../u1-purchase-skeleton/nfr-requirements/security-requirements.md`。Cookie・CSRF 対策・CORS など）はそのまま引き継ぐ。探索は読み出しだけで、データを変えない。この工程の決定のまとめは `nfr-requirements-questions.md` で確認済み（2026-10-30）。
 
 ## 前提（脅威の範囲）
 

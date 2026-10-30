@@ -1,6 +1,6 @@
 # 技術の選定（U2 コース探索）
 
-U2 で使う技術を決める。U1 の選定（`../../u1-purchase-skeleton/nfr-requirements/tech-stack-decisions.md`。Rust の axum・tokio・serde など、画面の rabbita と mizchi/js_web、リポジトリの構成）はそのまま引き継ぎ、ここでは U2 で足すもの・決めることだけを書く。要件定義書（`../../../inception/requirements-analysis/requirements.md`）の制約 C5（デファクトスタンダードの最新 stable 版を使う）に従う。
+U2 で使う技術を決める。U1 の選定（`../../u1-purchase-skeleton/nfr-requirements/tech-stack-decisions.md`。Rust の axum・tokio・serde など、画面の rabbita と mizchi/js_web、リポジトリの構成）はそのまま引き継ぎ、ここでは U2 で足すもの・決めることだけを書く。要件定義書（`../../../inception/requirements-analysis/requirements.md`）の制約 C5（デファクトスタンダードの最新 stable 版を使う）に従う。この工程の決定のまとめは `nfr-requirements-questions.md` で確認済み（2026-10-30）。
 
 ## 1. 足すもの
 

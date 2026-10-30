@@ -1,6 +1,6 @@
 # 拡張性の要件（U2 コース探索）
 
-要件定義書（`../../../inception/requirements-analysis/requirements.md`）の NFR7（データアクセスの差し替え）を、U2 の探索に当てはめる。想定する規模は U1 と同じ（`../../u1-purchase-skeleton/nfr-requirements/scalability-requirements.md`）。
+要件定義書（`../../../inception/requirements-analysis/requirements.md`）の NFR7（データアクセスの差し替え）を、U2 の探索に当てはめる。想定する規模は U1 と同じ（`../../u1-purchase-skeleton/nfr-requirements/scalability-requirements.md`）。この工程の決定のまとめは `nfr-requirements-questions.md` で確認済み（2026-10-30）。
 
 ## 要件
 

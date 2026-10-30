@@ -2,7 +2,7 @@
 
 要件定義書（`../../../inception/requirements-analysis/requirements.md`）の NFR1（性能）・NFR4（ユーザビリティ）・NFR5（アクセシビリティ）を、U2 の探索に当てはめて具体化する。U1 の要件（`../../u1-purchase-skeleton/nfr-requirements/performance-requirements.md`）はそのまま引き継ぎ、ここでは U2 で足すものだけを書く。
 
-前提: U1 と同じくローカル環境・初期データの規模で測る。
+前提: U1 と同じくローカル環境・初期データの規模で測る。この工程の決定のまとめは `nfr-requirements-questions.md` で確認済み（2026-10-30）。
 
 ## 性能の目標
 

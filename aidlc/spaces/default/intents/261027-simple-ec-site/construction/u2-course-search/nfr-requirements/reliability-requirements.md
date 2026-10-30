@@ -1,6 +1,6 @@
 # 信頼性と品質の保ち方の要件（U2 コース探索）
 
-要件定義書（`../../../inception/requirements-analysis/requirements.md`）の NFR2（信頼性・整合性）・NFR6（実装スタイル）・NFR8（テスト容易性）・NFR9（実行容易性）を、U2 に当てはめる。U1 の要件（`../../u1-purchase-skeleton/nfr-requirements/reliability-requirements.md`）はそのまま引き継ぐ。
+要件定義書（`../../../inception/requirements-analysis/requirements.md`）の NFR2（信頼性・整合性）・NFR6（実装スタイル）・NFR8（テスト容易性）・NFR9（実行容易性）を、U2 に当てはめる。U1 の要件（`../../u1-purchase-skeleton/nfr-requirements/reliability-requirements.md`）はそのまま引き継ぐ。この工程の決定のまとめは `nfr-requirements-questions.md` で確認済み（2026-10-30）。
 
 ## 整合性（NFR2）
 
