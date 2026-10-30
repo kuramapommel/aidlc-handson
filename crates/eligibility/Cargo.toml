@@ -1,0 +1,11 @@
+[package]
+name = "eligibility"
+description = "業務の部品 Eligibility: 企業と従業員、利用資格の判定（純粋関数）"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]

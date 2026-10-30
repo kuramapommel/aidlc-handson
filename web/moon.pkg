@@ -1,0 +1,21 @@
+// 画面の本体（状態・メッセージ・更新関数・描画関数・通信のコマンド）。
+// 通信は mizchi/js_web の fetch を使うため、JavaScript 向けだけをビルドする。
+import {
+  "moonbit-community/rabbita",
+  "moonbit-community/rabbita/cmd",
+  "moonbit-community/rabbita/html",
+  "moonbit-community/rabbita/nav",
+  "moonbit-community/rabbita/sub",
+  "moonbit-community/rabbita/url",
+  "mizchi/js_web/http" @fetch,
+  "mizchi/js_core" @js,
+  "moonbitlang/core/json",
+}
+
+supported_targets = "js"
+
+// derive(Eq, Debug) で作られるメソッドが型のメソッドとして使えることについての、
+// 今の MoonBit の移行期の注意（implicit_impl_as_method）だけを止める。derive した型ごとに
+// 2 件ずつ出るだけで、このパッケージではその使い方をしていない。ほかの警告はそのまま出す。
+
+warnings = "-implicit_impl_as_method"

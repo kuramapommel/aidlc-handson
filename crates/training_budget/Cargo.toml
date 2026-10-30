@@ -1,0 +1,12 @@
+[package]
+name = "training_budget"
+description = "業務の部品 TrainingBudget: 研修予算の取引と残高（純粋関数）"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+chrono = { version = "0.4.45", default-features = false, features = ["std"] }

@@ -1,0 +1,20 @@
+#!/bin/sh
+# monorepo 全体のコミット前の確認（Rust のフォーマットと MoonBit の型の確認）。
+# 有効にするには、リポジトリのルートで各自 1 回だけ次を実行する（README の「コミット前の確認」を参照）:
+#   git config core.hooksPath .githooks
+# すべての確認（clippy・テスト・画面のビルド）は bash scripts/verify.sh で行う。
+
+set -eu
+
+cd "$(git rev-parse --show-toplevel)"
+
+# 公式のインストーラーの既定の場所にある MoonBit のツールも使えるようにする
+if [ -d "${MOON_HOME:-$HOME/.moon}/bin" ]; then
+  PATH="${MOON_HOME:-$HOME/.moon}/bin:$PATH"
+fi
+
+echo "pre-commit: cargo fmt --all --check"
+cargo fmt --all --check
+
+echo "pre-commit: moon -C web check"
+moon -C web check
