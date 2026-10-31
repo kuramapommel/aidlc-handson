@@ -1,0 +1,8 @@
+// ブラウザで画面を起動する入り口（JavaScript 向けの実行ファイル）。
+import {
+  "aidlc-handson/web" @app,
+}
+
+pkgtype(kind: "executable")
+
+supported_targets = "js"

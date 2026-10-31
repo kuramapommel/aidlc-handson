@@ -1,0 +1,316 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "aidlc-handson/web"
+
+import {
+  "moonbit-community/rabbita",
+  "moonbit-community/rabbita/cmd",
+  "moonbit-community/rabbita/html",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn app(api_base~ : String) -> @rabbita.App
+
+pub fn category_label(String) -> String
+
+pub fn confirm_readiness(Model) -> Readiness
+
+pub fn contract_status_label(String) -> String
+
+pub let csrf_header_name : String
+
+pub let csrf_header_value : String
+
+pub fn decode_course_detail(ApiResponse) -> Result[CourseDetail, FetchError]
+
+pub fn decode_course_list(ApiResponse) -> Result[CourseList, FetchError]
+
+pub fn decode_employees(ApiResponse) -> Result[Array[Employee], FetchError]
+
+pub fn decode_me(ApiResponse) -> Result[Me, FetchError]
+
+pub fn decode_ticket(ApiResponse) -> Result[Ticket, FetchError]
+
+pub let default_api_base : String
+
+pub fn delivery_format_label(String) -> String
+
+pub fn effect_to_cmd(Effect, String, @cmd.Emit[Msg]) -> @cmd.Cmd
+
+pub fn eligibility_from_string(String) -> Eligibility
+
+pub fn fetch_error_text(FetchError) -> String
+
+pub fn[T] fetch_result(Result[ApiResponse, String], (ApiResponse) -> Result[T, FetchError]) -> Result[T, FetchError]
+
+pub fn find_session(CourseDetail, String) -> Session?
+
+pub fn format_date(String) -> String
+
+pub fn format_datetime(String) -> String
+
+pub fn format_duration(Int32) -> String
+
+pub fn format_points(Int32) -> String
+
+pub fn format_session_time(String, String) -> String
+
+pub fn init_model() -> Model
+
+pub fn purchase_message(Int32, ApiResponse) -> Msg
+
+pub fn rejection_message(RejectionReason) -> String
+
+pub fn rejection_offers_another_session(RejectionReason) -> Bool
+
+pub fn rejection_reason_from_string(String, String) -> RejectionReason
+
+pub fn request_cmd(HttpMethod, String, String?, (Result[ApiResponse, String]) -> @cmd.Cmd) -> @cmd.Cmd
+
+pub fn request_headers(HttpMethod) -> Map[String, String]
+
+pub fn route_from_path(String) -> Route
+
+pub fn route_to_path(Route) -> String
+
+pub fn session_status_from_string(String) -> SessionStatus
+
+pub fn session_status_label(SessionStatus) -> String
+
+pub fn unavailable_notice(Session?) -> String
+
+pub fn update(Model, Msg) -> (Model, Array[Effect])
+
+pub fn venue_label(String?, String) -> String
+
+pub fn view(Model, @cmd.Emit[Msg]) -> @html.Html
+
+// Errors
+
+// Types and methods
+pub(all) struct ApiResponse {
+  status : Int32
+  body : String
+} derive(Eq, @debug.Debug)
+
+pub(all) enum BlockReason {
+  NotEligible
+  Unavailable(SessionStatus)
+  InsufficientBalance(Int32)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ConfirmSummary {
+  course : Course
+  session : Session
+  balance : Int32
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Course {
+  course_id : String
+  title : String
+  category : String
+  summary : String
+  description : String
+  fee_points : Int32
+  duration_minutes : Int32
+  delivery_format : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CourseDetail {
+  course : Course
+  sessions : Array[Session]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CourseList {
+  courses : Array[CourseRow]
+  count : Int32
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CourseRow {
+  course_id : String
+  title : String
+  category : String
+  summary : String
+  fee_points : Int32
+  delivery_format : String
+  next_session_starts_at : String?
+  open_session_count : Int32
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Effect {
+  FetchMe(Int32)
+  FetchCourses(Int32)
+  FetchCourseDetail(Int32, String)
+  FetchTicket(Int32, String)
+  FetchEmployees
+  SwitchEmployee(String)
+  SubmitPurchase(Int32, String)
+  PushUrl(String)
+  ReplaceUrl(String)
+  LoadUrl(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Eligibility {
+  Eligible
+  CompanyNotActive
+  EmployeeNotFound
+  OtherEligibility(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Employee {
+  employee_id : String
+  display_name : String
+  company_name : String
+  contract_status : String
+} derive(Eq, @debug.Debug)
+
+pub(all) enum FetchError {
+  NotFound
+  Http(Int32, String)
+  Network(String)
+  Decode(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum HttpMethod {
+  Get
+  Post
+} derive(Eq, @debug.Debug)
+
+type JstDateTime derive(Eq, @debug.Debug)
+
+pub(all) struct Me {
+  employee_id : String?
+  display_name : String?
+  company_name : String?
+  contract_status : String?
+  eligibility : Eligibility
+  balance : Int32
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Model {
+  route : Route
+  generation : Int32
+  me : Remote[Me]
+  switcher : Switcher
+  course_list : Remote[CourseList]
+  course_detail : Remote[CourseDetail]
+  selected_session_id : String?
+  notice : String?
+  purchase : PurchaseState
+  ticket : Remote[Ticket]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Msg {
+  UrlChanged(String)
+  LinkClicked(String)
+  ExternalLinkClicked(String)
+  MeLoaded(Int32, Result[Me, FetchError])
+  RetryMe
+  CourseListLoaded(Int32, Result[CourseList, FetchError])
+  RetryCourseList
+  CourseDetailLoaded(Int32, String, Result[CourseDetail, FetchError])
+  RetryCourseDetail
+  SessionSelected(String)
+  ProceedToConfirm
+  BackToDetail
+  ConfirmClicked
+  PurchaseSucceeded(Int32, Ticket, Int32)
+  PurchaseRejected(Int32, RejectionReason)
+  PurchaseFailed(Int32, String)
+  PurchaseNetworkFailed(Int32)
+  RetryPurchase
+  ChooseAnotherSession
+  TicketLoaded(Int32, String, Result[Ticket, FetchError])
+  RetryTicket
+  SwitcherOpened
+  SwitcherClosed
+  EmployeesLoaded(Result[Array[Employee], FetchError])
+  EmployeeChosen(String)
+  EmployeeSwitched(Result[Me, FetchError])
+} derive(Eq, @debug.Debug)
+
+pub(all) enum PurchaseState {
+  Idle
+  Submitting
+  Succeeded(Ticket)
+  Rejected(RejectionReason)
+  NetworkFailed
+  RequestFailed(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Readiness {
+  Waiting
+  Ready(ConfirmSummary)
+  Blocked(ConfirmSummary, BlockReason)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum RejectionReason {
+  ReasonEmployeeNotFound
+  ReasonCompanyNotActive
+  ReasonSessionNotFound
+  ReasonClosed
+  ReasonAlreadyPurchased
+  ReasonFull
+  ReasonInsufficientBalance
+  OtherReason(String, String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Remote[T] {
+  NotAsked
+  Loading
+  Loaded(T)
+  Missing
+  Failed(FetchError)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Route {
+  CourseListPage
+  CourseDetailPage(String)
+  PurchaseConfirmPage(String, String)
+  PurchaseCompletePage(String)
+  NotFoundPage
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Session {
+  session_id : String
+  starts_at : String
+  ends_at : String
+  venue : String?
+  capacity : Int32
+  remaining_seats : Int32
+  status : SessionStatus
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SessionStatus {
+  Available
+  Full
+  Closed
+  Purchased
+  OtherStatus(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Switcher {
+  is_open : Bool
+  employees : Remote[Array[Employee]]
+  is_switching : Bool
+  error : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Ticket {
+  ticket_id : String
+  ticket_number : String
+  employee_name : String
+  course_id : String
+  course_title : String
+  session_id : String
+  starts_at : String
+  ends_at : String
+  venue : String?
+  delivery_format : String
+  purchased_at : String
+  paid_points : Int32
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

@@ -1,0 +1,56 @@
+# GitHub Copilot のコーディングエージェントが作業を始める前に、monorepo 全体の開発環境を整える手順。
+# 参考: https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/customize-the-agent-environment
+#
+# 用意するもの（README の「前提のツール」と同じ）:
+#   - Rust の最新 stable（rustfmt・clippy を含む）: crates/ の業務の部品・Web API・静的ファイルサーバー
+#   - MoonBit のツール（moon）: web/ の画面
+#   - Node.js 22: 画面のテスト（moon -C web test --target js）の実行
+name: "Copilot Setup Steps"
+
+# 手順を変えたときに自動で動かして確かめ、Actions のタブから手動でも動かせるようにする
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # ジョブ名は `copilot-setup-steps` でなければ Copilot に使われない
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+
+    # 必要最小限の権限にする（リポジトリの取得だけ）
+    permissions:
+      contents: read
+
+    steps:
+      - name: リポジトリを取得する
+        uses: actions/checkout@v5
+
+      - name: Rust（stable・rustfmt・clippy）を用意する
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt,clippy
+          rustup default stable
+          cargo --version
+
+      - name: Rust の依存を取得する（Cargo.lock のとおり）
+        run: cargo fetch --locked
+
+      - name: MoonBit を用意する
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: MoonBit の依存を取得する（web/moon.mod のとおり）
+        run: |
+          moon version --all
+          moon update
+          moon -C web check --target js
+
+      - name: 画面のテスト用の Node.js を用意する
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
