@@ -96,6 +96,12 @@
 
 
 
+- **Active Unit**: u3-my-tickets
+
+- **Unit Stage**: functional-design
+
+- **Unit State**: in-progress
+
 ## Phase Progress
 <!-- Status values: Pending, Active, Verified, Skipped -->
 
@@ -157,7 +163,7 @@ Per unit: [TBD]
 | unit | owner | functional-design | nfr-requirements | code-generation | gate |
 | --- | --- | --- | --- | --- | --- |
 | u1-purchase-skeleton | - | [x] | [x] | [x] | [x] |
-| u2-course-search | - | [x] | [x] | [ ] | [R] |
+| u2-course-search | - | [x] | [x] | [x] | [x] |
 | u3-my-tickets | - | [ ] | [ ] | [ ] | [ ] |
 
 ## Current Status
@@ -165,7 +171,7 @@ Per unit: [TBD]
 - **Current Stage**: functional-design
 - **Next Stage**: nfr-requirements
 - **Status**: Running
-- **Last Updated**: 2026-11-01T14:47:36Z
+- **Last Updated**: 2026-11-01T14:48:54Z
 
 ## Session Resume Point
 - **Last Completed Stage**: delivery-planning
