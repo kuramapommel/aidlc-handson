@@ -40,7 +40,7 @@
 - **In Progress**: functional-design
 
 ## Runtime State
-- **Revision Count**: 1
+- **Revision Count**: 2
 - **Construction Checkpoints**: enabled
 - **Construction Iteration**: unit-major
 - **Construction Execution**: serial
@@ -148,7 +148,7 @@ Per unit: [TBD]
 | unit | owner | functional-design | nfr-requirements | code-generation | gate |
 | --- | --- | --- | --- | --- | --- |
 | u1-purchase-skeleton | - | [x] | [x] | [x] | [x] |
-| u2-course-search | - | [x] | [x] | [x] | [R] |
+| u2-course-search | - | [ ] | [ ] | [ ] | [R] |
 | u3-my-tickets | - | [ ] | [ ] | [ ] | [ ] |
 
 ## Current Status
@@ -156,7 +156,7 @@ Per unit: [TBD]
 - **Current Stage**: functional-design
 - **Next Stage**: nfr-requirements
 - **Status**: Running
-- **Last Updated**: 2026-11-01T02:28:26Z
+- **Last Updated**: 2026-11-01T14:34:33Z
 
 ## Session Resume Point
 - **Last Completed Stage**: delivery-planning
