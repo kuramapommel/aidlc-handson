@@ -262,3 +262,54 @@ button:disabled {
   display: inline-block;
   margin: 8px 0;
 }
+
+/* U2: コース一覧の探索条件（SearchForm）。入力の案内は色だけでなく文字で出す。 */
+.search-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.search-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-field-checkbox {
+  flex-direction: row;
+  align-items: center;
+}
+
+.search-label {
+  font-weight: 700;
+}
+
+.search-form input,
+.search-form select {
+  font: inherit;
+  padding: 4px 8px;
+}
+
+.search-period {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 0;
+  padding: 4px 12px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.field-error {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-danger);
+  font-weight: 700;
+}

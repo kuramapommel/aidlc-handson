@@ -23,6 +23,18 @@ impl Category {
             Self::Compliance => "compliance",
         }
     }
+
+    /// Web API などで使う値からカテゴリを得る。決められた 4 つ以外なら `None`（U2 の BR8.2）。
+    pub fn from_value(value: &str) -> Option<Self> {
+        [
+            Self::Management,
+            Self::Technology,
+            Self::BusinessSkills,
+            Self::Compliance,
+        ]
+        .into_iter()
+        .find(|c| c.as_str() == value)
+    }
 }
 
 /// 受講の形式。
@@ -47,6 +59,9 @@ impl DeliveryFormat {
 pub struct Course {
     pub id: CourseId,
     pub title: String,
+    /// コース名のよみがな（U2。コース名順の並べ替えに使う。BR10.4）。
+    /// ひらがな・長音符（ー）・英数字・空白で書く（例: 「ちーむまねじめんとにゅうもん」）。
+    pub title_reading: String,
     pub category: Category,
     pub summary: String,
     pub description: String,
@@ -72,12 +87,27 @@ fn char_count_within(text: &str, min: usize, max: usize) -> bool {
     (min..=max).contains(&text.chars().count())
 }
 
+/// よみがなに使える文字（ひらがな・長音符・半角英数字・半角空白）だけでできているか（U2 の entities.md）。
+pub fn is_valid_reading(reading: &str) -> bool {
+    reading
+        .chars()
+        .all(|c| matches!(c, 'ぁ'..='ゖ' | 'ー' | ' ') || c.is_ascii_alphanumeric())
+}
+
 /// コースが entities.md の制約を満たすかを確かめる。満たさない項目の説明を返す。
 pub fn validate_course(course: &Course) -> Result<(), String> {
     let checks = [
         (
             char_count_within(&course.title, 1, 80),
             "title は 1〜80 文字",
+        ),
+        (
+            char_count_within(&course.title_reading, 1, 120),
+            "titleReading は 1〜120 文字",
+        ),
+        (
+            is_valid_reading(&course.title_reading),
+            "titleReading はひらがな・長音符・英数字・空白だけ",
         ),
         (
             char_count_within(&course.summary, 1, 120),

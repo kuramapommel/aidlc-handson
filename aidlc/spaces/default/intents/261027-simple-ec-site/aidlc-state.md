@@ -25,7 +25,7 @@
 - **Sensors**: on (from scope workshop)
 - **Learnings**: on (from scope workshop)
 - **Summary Confirmation**: on (from scope workshop)
-- **Plan Approval**: on (from scope workshop)
+- **Plan Approval**: on (set by a command)
 - **Collaborators**: off (from scope workshop)
 
 ## Workspace State
@@ -40,7 +40,7 @@
 - **In Progress**: functional-design
 
 ## Runtime State
-- **Revision Count**: 0
+- **Revision Count**: 2
 - **Construction Checkpoints**: enabled
 - **Construction Iteration**: unit-major
 - **Construction Execution**: serial
@@ -55,6 +55,33 @@
 
 
 - **Skeleton Stance**: scope-dependent
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -130,7 +157,7 @@ Per unit: [TBD]
 | unit | owner | functional-design | nfr-requirements | code-generation | gate |
 | --- | --- | --- | --- | --- | --- |
 | u1-purchase-skeleton | - | [x] | [x] | [x] | [x] |
-| u2-course-search | - | [ ] | [ ] | [ ] | [ ] |
+| u2-course-search | - | [x] | [x] | [ ] | [R] |
 | u3-my-tickets | - | [ ] | [ ] | [ ] | [ ] |
 
 ## Current Status
@@ -138,7 +165,7 @@ Per unit: [TBD]
 - **Current Stage**: functional-design
 - **Next Stage**: nfr-requirements
 - **Status**: Running
-- **Last Updated**: 2026-10-29T12:55:55Z
+- **Last Updated**: 2026-11-01T14:47:36Z
 
 ## Session Resume Point
 - **Last Completed Stage**: delivery-planning

@@ -99,10 +99,10 @@ fn view_not_found(message : String, id : String) -> @html.Html {
 }
 
 ///|
-/// 「コース一覧へ戻る」のリンク。
-fn back_to_list_link(id : String) -> @html.Html {
+/// 「コース一覧へ戻る」のリンク。`href` は探索条件付きの一覧の URL にできる（U2）。
+fn back_to_list_link(id : String, href~ : String = "/") -> @html.Html {
   @html.a(
-    href="/",
+    href~,
     class="back-link",
     attrs=testid(id),
     "コース一覧へ戻る",

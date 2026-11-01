@@ -177,7 +177,47 @@ const COURSES: &[CourseRow] = &[
         120,
         DeliveryFormat::Venue,
     ),
+    // U2 の探索の確認用（functional-spec.md 6 節）: 今後の日程が満席だけのコース。
+    // 受講料は C002 と同じ、直近の開催日時も C002（S0004）と同じにして、同値の並びを確かめられるようにする。
+    (
+        "C014",
+        "新任リーダー研修",
+        Category::Management,
+        "新しくリーダーになった人が、最初の 3 か月で押さえる仕事の進め方。",
+        "メンバーとの関係づくり、仕事の任せ方、報告の受け方を、先輩リーダーの事例をもとに学びます。",
+        18_000,
+        120,
+        DeliveryFormat::Online,
+    ),
 ];
+
+/// コース名のよみがな（U2 の BR10.4。コース名順の並べ替えに使う）: (コース ID, よみがな)。
+/// 漢字の読みは実行時に推定せず、ここに手で書く（TD-U2-2）。英字・数字は読みに直す。
+const READINGS: &[(&str, &str)] = &[
+    ("C001", "ちーむまねじめんとにゅうもん"),
+    ("C002", "わんおんわんみーてぃんぐじっせん"),
+    ("C003", "ひょうかめんだんのすすめかた"),
+    ("C004", "らすとによるうぇぶえーぴーあいかいはつ"),
+    ("C005", "くらうどせっけいのきそ"),
+    ("C006", "でーたぶんせきにゅうもん"),
+    ("C007", "せいせいえーあいかつようわーくしょっぷ"),
+    ("C008", "ろじかるしんきんぐ"),
+    ("C009", "ぷれぜんてーしょんぎほう"),
+    ("C010", "こうしょうりょくきょうかこうざ"),
+    ("C011", "じょうほうせきゅりてぃきそ"),
+    ("C012", "はらすめんとぼうしけんしゅう"),
+    ("C013", "こじんじょうほうほごのじつむ"),
+    ("C014", "しんにんりーだーけんしゅう"),
+];
+
+/// コース ID のよみがなを引く。初期データのすべてのコースに書いてある（テストで確かめる）。
+fn reading_of(course_id: &str) -> &'static str {
+    READINGS
+        .iter()
+        .find(|(cid, _)| *cid == course_id)
+        .map(|(_, reading)| *reading)
+        .unwrap_or_else(|| panic!("初期データのコース {course_id} によみがながありません"))
+}
 
 /// 日程: (ID, コース ID, 起動日からの日数, 開始の時（日本時間）, 定員, 会場)
 ///
@@ -214,6 +254,8 @@ const SESSIONS: &[SessionRow] = &[
     ("S0017", "C011", 4, 10, 100, None),
     ("S0018", "C011", 90, 10, 100, None),
     ("S0019", "C012", -20, 15, 30, None),
+    // U2: C014 の唯一の日程。定員 2 で初期データのチケット 2 枚により満席。開催日時は S0004（C002）と同じ
+    ("S0020", "C014", 5, 10, 2, None),
 ];
 
 /// 初期データで購入済みにする (従業員 ID, 日程 ID)。満席の日程を作るため。
@@ -222,6 +264,8 @@ const SEED_PURCHASES: &[(&str, &str)] = &[
     ("E006", "S0002"),
     ("E005", "S0011"),
     ("E006", "S0011"),
+    ("E005", "S0020"),
+    ("E006", "S0020"),
 ];
 
 fn id<T, E: std::fmt::Debug>(parsed: Result<T, E>) -> T {
@@ -282,6 +326,7 @@ fn courses() -> Vec<Course> {
             |(cid, title, category, summary, description, fee, minutes, format)| Course {
                 id: id(CourseId::parse(cid)),
                 title: (*title).to_owned(),
+                title_reading: reading_of(cid).to_owned(),
                 category: *category,
                 summary: (*summary).to_owned(),
                 description: (*description).to_owned(),

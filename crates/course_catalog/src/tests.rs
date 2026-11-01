@@ -14,6 +14,7 @@ fn course(id: &str, format: DeliveryFormat) -> Course {
     Course {
         id: CourseId::parse(id).unwrap(),
         title: format!("コース {id}"),
+        title_reading: "こーす".into(),
         category: Category::Technology,
         summary: "概要".into(),
         description: "説明".into(),

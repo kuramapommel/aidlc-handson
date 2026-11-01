@@ -1,7 +1,9 @@
 // 各画面の描画（コース一覧・コースの詳細・購入確認・完了と e チケット）。
 
 ///|
-/// コース一覧（WF1）。
+/// コース一覧（WF1）。U2 で探索条件の入力・0 件・400 の案内を足した。
+/// 条件を変えても全画面は描き直さず、件数と一覧の部分だけが変わる（NFR1.3）。
+/// 件数・0 件・失敗の変化はライブリージョンで支援技術に知らせる（NFR5.3）。
 fn view_course_list_page(model : Model, emit : @cmd.Emit[Msg]) -> @html.Html {
   let body = match model.course_list {
     NotAsked | Loading =>
@@ -12,7 +14,7 @@ fn view_course_list_page(model : Model, emit : @cmd.Emit[Msg]) -> @html.Html {
       view_load_failed(
         "コース一覧",
         error,
-        RetryCourseList,
+        RetrySearch,
         "course-list-failed",
         emit,
       )
@@ -20,15 +22,22 @@ fn view_course_list_page(model : Model, emit : @cmd.Emit[Msg]) -> @html.Html {
       view_load_failed(
         "コース一覧",
         NotFound,
-        RetryCourseList,
+        RetrySearch,
         "course-list-failed",
         emit,
       )
+    Loaded(list) if list.count == 0 => view_empty_results(emit)
     Loaded(list) => view_course_list(list)
   }
   @html.section(class="course-list-page", attrs=testid("course-list-page"), [
     @html.h1("コース一覧"),
-    body,
+    view_search_form(model, emit),
+    view_condition_errors(model),
+    @html.div(
+      class="search-results",
+      attrs=testid("course-search-results").aria_live("polite"),
+      [body],
+    ),
   ])
 }
 
@@ -128,7 +137,11 @@ fn view_course_detail(
     class="course-detail-page",
     attrs=testid("course-detail-page"),
     [
-      back_to_list_link("course-detail-back-link"),
+      // 詳細へ移る前の一覧の条件を持った URL へ戻る（U2 の BR11.8）
+      back_to_list_link(
+        "course-detail-back-link",
+        href=list_path(model.search_input),
+      ),
       @html.h1(course.title),
       field_list(
         [

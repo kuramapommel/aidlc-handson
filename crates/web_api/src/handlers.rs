@@ -4,8 +4,9 @@
 use axum::Json;
 use chrono::{DateTime, Utc};
 use course_catalog::{
-    CourseId, SessionId, course_detail as catalog_detail, find_session_with_course,
-    list_courses as catalog_list,
+    CourseId, RawSearchCondition, SessionId, course_detail as catalog_detail,
+    find_session_with_course, list_courses as catalog_list, parse_search_condition,
+    search_courses as catalog_search,
 };
 use eligibility::{
     EligibilityResult, EmployeeId, company_finder, determine_eligibility, employee_finder,
@@ -45,6 +46,53 @@ pub fn list_courses(state: &StoreState, now: DateTime<Utc>) -> Json<CourseListDt
         count: courses.len(),
         courses,
     })
+}
+
+/// クエリの組から、名前が一致する最初の値を取り出す（同じ名前が複数あれば先頭を使う）。
+fn query_value<'a>(query: &'a [(String, String)], name: &str) -> Option<&'a str> {
+    query
+        .iter()
+        .find(|(key, _)| key == name)
+        .map(|(_, value)| value.as_str())
+}
+
+/// クエリの組から、検証前の探索条件を作る（U2 の functional-spec.md 3 節）。知らない名前は無視する。
+pub fn raw_search_condition(query: &[(String, String)]) -> RawSearchCondition<'_> {
+    RawSearchCondition {
+        keyword: query_value(query, "q"),
+        category: query_value(query, "category"),
+        available: query_value(query, "available"),
+        from: query_value(query, "from"),
+        to: query_value(query, "to"),
+        sort: query_value(query, "sort"),
+    }
+}
+
+/// `GET /api/courses?q=&category=&available=&from=&to=&sort=`: 探索条件付きのコース一覧（U2）。
+///
+/// 形の決まった条件を検証し（BR8.2〜BR8.5）、不正なら不正な項目をすべて挙げて 400 にする
+/// （BR8.6）。キーワードでは 400 にしない（BR8.1）。応答の形は U1 の一覧と同じで、件数は
+/// 条件に合うコースの数（BR10.5）。条件が既定なら U1 の一覧と同じ結果になる。
+pub fn search_courses(
+    state: &StoreState,
+    query: &[(String, String)],
+    now: DateTime<Utc>,
+) -> Result<Json<CourseListDto>, ApiError> {
+    let condition = parse_search_condition(&raw_search_condition(query))
+        .map_err(ApiError::InvalidSearchCondition)?;
+    let counts = issued_counts(&state.tickets);
+    let rows = catalog_search(
+        &state.courses,
+        &state.sessions,
+        &condition,
+        issued_counter(&counts),
+        now,
+    );
+    let courses: Vec<CourseRowDto> = rows.iter().map(CourseRowDto::from).collect();
+    Ok(Json(CourseListDto {
+        count: courses.len(),
+        courses,
+    }))
 }
 
 /// `GET /api/courses/{courseId}`: コースの詳細と、表示用の状態付きの日程（BR2.1〜BR2.4）。

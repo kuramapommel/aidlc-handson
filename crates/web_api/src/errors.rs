@@ -4,6 +4,7 @@
 use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
+use course_catalog::SearchConditionError;
 use purchasing::RejectionReason;
 use serde_json::json;
 
@@ -12,6 +13,9 @@ use serde_json::json;
 pub enum ApiError {
     /// 入力の形式が正しくない（400）。
     BadRequest(String),
+    /// コース一覧の探索条件が不正（400。U2 の BR8.6）。不正な項目と理由をすべて持つ。
+    /// 受け取った値そのものは応答に含めない（NFR3.6）。
+    InvalidSearchCondition(Vec<SearchConditionError>),
     /// 書き込みの要求が CSRF 対策の条件を満たさない（403）。
     Forbidden,
     /// 見つからない（404）。
@@ -47,6 +51,17 @@ impl IntoResponse for ApiError {
             Self::BadRequest(message) => (
                 StatusCode::BAD_REQUEST,
                 json!({ "error": { "code": "invalid-request", "message": message } }),
+            ),
+            Self::InvalidSearchCondition(errors) => (
+                StatusCode::BAD_REQUEST,
+                json!({ "error": {
+                    "code": "invalid-search-condition",
+                    "message": "探索条件が正しくありません",
+                    "fields": errors
+                        .iter()
+                        .map(|e| json!({ "field": e.field.as_str(), "reason": e.reason }))
+                        .collect::<Vec<_>>(),
+                } }),
             ),
             Self::Forbidden => (
                 StatusCode::FORBIDDEN,

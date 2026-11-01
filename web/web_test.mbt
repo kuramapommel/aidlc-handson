@@ -111,7 +111,7 @@ test "起動時は操作中の従業員とコース一覧を読み込み中に�
   assert_eq(model.route, CourseListPage)
   assert_eq(model.me, Loading)
   assert_eq(model.course_list, Loading)
-  assert_eq(effects, [FetchMe(0), FetchCourses(0)])
+  assert_eq(effects, [FetchMe(0), FetchCourses(0, 1)])
 }
 
 ///|
@@ -129,12 +129,12 @@ test "起動時の URL がコースの詳細なら、その詳細を取得する
 test "一覧の読み込みに失敗したら失敗にし、再試行で読み込み中に戻して取得し直す（BR7.1）" {
   let failed = run(@web.init_model(), [
     UrlChanged("/"),
-    CourseListLoaded(0, Err(Network("接続できません"))),
+    CourseListLoaded(0, 1, Err(Network("接続できません"))),
   ])
   assert_eq(failed.course_list, Failed(Network("接続できません")))
   let (retried, effects) = @web.update(failed, RetryCourseList)
   assert_eq(retried.course_list, Loading)
-  assert_eq(effects, [FetchCourses(0)])
+  assert_eq(effects, [FetchCourses(0, 2)])
 }
 
 ///|
@@ -364,10 +364,10 @@ test "従業員の切り替えの成功で、どの画面からも一覧へ戻�
   assert_eq(switched.purchase, Idle)
   assert_eq(switched.ticket, NotAsked)
   assert_false(switched.switcher.is_open)
-  assert_eq(effects, [PushUrl("/"), FetchCourses(1)])
+  assert_eq(effects, [PushUrl("/"), FetchCourses(1, 1)])
   // 切り替えの前の従業員の要求の応答は捨てる
   let stale = run(switched, [
-    CourseListLoaded(0, Ok({ courses: [], count: 0, })),
+    CourseListLoaded(0, 1, Ok({ courses: [], count: 0, })),
     MeLoaded(0, Ok(me_fixture())),
   ])
   assert_eq(stale, switched)

@@ -19,6 +19,7 @@ fn course(fee: u32) -> Course {
     Course {
         id: CourseId::parse("C001").unwrap(),
         title: "チームマネジメント入門".into(),
+        title_reading: "ちーむまねじめんとにゅうもん".into(),
         category: Category::Management,
         summary: "概要".into(),
         description: "説明".into(),
