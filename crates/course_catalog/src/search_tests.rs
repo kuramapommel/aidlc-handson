@@ -2,7 +2,7 @@
 //! クロージャ、固定の時刻を渡して動かす（NFR7.2、NFR8.3）。
 //! 実行: `cargo test -p course_catalog search_tests`
 
-use chrono::{DateTime, Duration, NaiveDate, TimeZone, Utc};
+use chrono::{DateTime, Duration, FixedOffset, NaiveDate, TimeZone, Utc};
 
 use crate::*;
 
@@ -384,6 +384,86 @@ fn period_includes_both_ends_and_requires_an_open_upcoming_session() {
     assert_eq!(combined, ["C003"]);
 }
 
+/// 日本時間の日時を UTC にする。
+fn jst(day: u32, hour: u32, minute: u32, second: u32) -> DateTime<Utc> {
+    FixedOffset::east_opt(9 * 3600)
+        .unwrap()
+        .with_ymd_and_hms(2026, 11, day, hour, minute, second)
+        .unwrap()
+        .with_timezone(&Utc)
+}
+
+/// 日本時間の 0 時をまたぐ日程を持つ小さなテスト用のデータ（どの日程も空席がある今後の日程）。
+/// - C101: 11/05 00:30（UTC では 11/04 15:30）
+/// - C102: 11/04 23:30（UTC では 11/04 14:30）
+/// - C103: 11/06 00:00:00 ちょうど（UTC では 11/05 15:00）
+/// - C104: 11/05 23:59:59（UTC では 11/05 14:59:59）
+fn midnight_fixture() -> (Vec<Course>, Vec<Session>) {
+    let starts = [
+        ("C101", jst(5, 0, 30, 0)),
+        ("C102", jst(4, 23, 30, 0)),
+        ("C103", jst(6, 0, 0, 0)),
+        ("C104", jst(5, 23, 59, 59)),
+    ];
+    let courses = starts
+        .iter()
+        .map(|(id, _)| {
+            course(
+                id,
+                "研修",
+                "けんしゅう",
+                Category::Technology,
+                "概要",
+                10_000,
+            )
+        })
+        .collect();
+    let sessions = starts
+        .iter()
+        .enumerate()
+        .map(|(i, (id, at))| session(&format!("S01{i:02}"), id, *at, 5))
+        .collect();
+    (courses, sessions)
+}
+
+#[test]
+fn period_uses_the_jst_calendar_date_across_midnight() {
+    let (courses, sessions) = midnight_fixture();
+    // データが確かに日本時間の 0 時をまたいでいること（UTC の日付は日本時間の日付と違う）
+    assert_eq!(sessions[0].starts_at.date_naive(), date("2026-11-04"));
+    assert_eq!(sessions[2].starts_at.date_naive(), date("2026-11-05"));
+    let by_period = |from: Option<&'static str>, to: Option<&'static str>| -> Vec<String> {
+        let raw = RawSearchCondition {
+            from,
+            to,
+            ..Default::default()
+        };
+        search_courses(&courses, &sessions, &condition(raw), |_| 0, fixed_now())
+            .iter()
+            .map(|r| r.course.id.as_str().to_owned())
+            .collect()
+    };
+    // 開始日 = 終了日 = 11/05: 日本時間の 11/05 0:30 と 23:59:59 に始まる日程だけ（UTC では 11/04 と 11/05）
+    assert_eq!(
+        by_period(Some("2026-11-05"), Some("2026-11-05")),
+        ["C101", "C104"]
+    );
+    // 11/04: 日本時間の 11/04 23:30 だけ。UTC で 11/04 の 0:30 の日程（C101）は含まない
+    assert_eq!(by_period(Some("2026-11-04"), Some("2026-11-04")), ["C102"]);
+    // 11/06: 日本時間の 0:00 ちょうどは 11/06 に数える
+    assert_eq!(by_period(Some("2026-11-06"), Some("2026-11-06")), ["C103"]);
+    // 終了日だけ（11/05 以前）: 日本時間の 11/06 0:00（UTC では 11/05）は含まない
+    assert_eq!(
+        by_period(None, Some("2026-11-05")),
+        ["C102", "C101", "C104"]
+    );
+    // 開始日だけ（11/05 以降）: 日本時間の 11/04 23:30 は含まない
+    assert_eq!(
+        by_period(Some("2026-11-05"), None),
+        ["C101", "C104", "C103"]
+    );
+}
+
 // ---------- 並べ替えと件数（BR10.1〜BR10.5） ----------
 
 #[test]
@@ -413,6 +493,62 @@ fn four_sort_orders_break_ties_by_course_id() {
         by_sort("name"),
         ["C005", "C004", "C002", "C001", "C006", "C003"]
     );
+}
+
+#[test]
+fn name_order_compares_normalized_hiragana_by_code_point() {
+    // よみがなと、日程のないコース（並べ替えだけを確かめる）。ID の順と名前の順はわざとずらす
+    let readings = [
+        ("C201", "かあど"),
+        ("C202", "かーど"),
+        ("C203", "がいど"),
+        // カタカナはひらがなにそろえて比べる（「かーど」と同じになり、ID 順）
+        ("C204", "カード"),
+        ("C205", "かんど"),
+        // ひらがなとカタカナが混じるよみがな（「きかく」）
+        ("C206", "きカク"),
+        // 半角カタカナと濁点（NFKC で「カイゼン」→「かいぜん」）
+        ("C207", "ｶｲｾﾞﾝ"),
+        ("C208", "ぱす"),
+        ("C209", "ばす"),
+        ("C210", "はす"),
+    ];
+    let courses: Vec<Course> = readings
+        .iter()
+        .map(|(id, reading)| course(id, "研修", reading, Category::Technology, "概要", 10_000))
+        .collect();
+    let sorted: Vec<String> = search_courses(
+        &courses,
+        &[],
+        &condition(RawSearchCondition {
+            sort: Some("name"),
+            ..Default::default()
+        }),
+        |_| 0,
+        fixed_now(),
+    )
+    .iter()
+    .map(|r| r.course.id.as_str().to_owned())
+    .collect();
+    // 符号の順: 「あ」<「い」<「ん」<「ー」（長音符はひらがなの後）、清音 < 濁音 < 半濁音
+    // （「か」<「が」<「き」、「は」<「ば」<「ぱ」）
+    assert_eq!(
+        sorted,
+        [
+            "C201", // かあど
+            "C207", // かいぜん（ｶｲｾﾞﾝ）
+            "C205", // かんど
+            "C202", // かーど
+            "C204", // かーど（カード）
+            "C203", // がいど
+            "C206", // きかく（きカク）
+            "C210", // はす
+            "C209", // ばす
+            "C208", // ぱす
+        ]
+    );
+    assert_eq!(normalize_text("ｶｲｾﾞﾝ"), "かいぜん");
+    assert_eq!(normalize_text("きカク"), "きかく");
 }
 
 #[test]

@@ -50,6 +50,7 @@ fn on_list() -> @web.Model {
     MeLoaded(0, Ok(search_me())),
     CourseListLoaded(
       0,
+      1,
       Ok(search_list([search_row("C001", "入門"), search_row("C007", "AI")])),
     ),
   ])
@@ -104,11 +105,63 @@ test "最後に送った要求の応答だけを反映し、古い応答は捨�
   // 古い番号の応答が後から届いても捨てる
   let late = search_run(applied, [SearchLoaded(0, old_seq, Ok(search_list([])))])
   assert_eq(late, applied)
-  // 条件付きの要求の後に届いた、条件なしの古い応答も捨てる
+  // 条件付きの要求の後に届いた、条件なしの古い応答（on_list の番号 1）も捨てる
   let stale_plain = search_run(second, [
-    CourseListLoaded(0, Ok(search_list([]))),
+    CourseListLoaded(0, 1, Ok(search_list([]))),
   ])
   assert_eq(stale_plain, second)
+}
+
+///|
+test "条件なし → 条件あり → 条件なしと送ると、最後の条件なしの要求の応答だけを反映する（BR11.2、NFR2.2）" {
+  // 1 回目の条件なし（起動時。応答はまだ届いていない）
+  let (started, effects) = @web.update(@web.init_model(), UrlChanged("/"))
+  let first_seq = started.search_request_seq
+  assert_eq(effects, [FetchMe(0), FetchCourses(0, first_seq)])
+  // 条件あり
+  let (filtered, _) = @web.update(started, CategoryChanged("technology"))
+  let filtered_seq = filtered.search_request_seq
+  // 2 回目の条件なし（リセット）。1 回目と違う番号で送る
+  let (reset, effects) = @web.update(filtered, ResetConditions)
+  let last_seq = reset.search_request_seq
+  assert_true(first_seq < filtered_seq && filtered_seq < last_seq)
+  assert_eq(effects, [FetchCourses(0, last_seq), ReplaceUrl("/")])
+  // 古い要求の応答（1 回目の条件なしの失敗・条件ありの成功）が先に届いても捨てる
+  let stale = search_run(reset, [
+    CourseListLoaded(0, first_seq, Err(Network("接続できません"))),
+    SearchLoaded(0, filtered_seq, Ok(search_list([search_row("C004", "Rust")]))),
+  ])
+  assert_eq(stale, reset)
+  // 最新の条件なしの応答は反映する
+  let all = search_list([search_row("C001", "入門"), search_row("C007", "AI")])
+  let shown = search_run(reset, [CourseListLoaded(0, last_seq, Ok(all))])
+  assert_eq(shown.course_list, Loaded(all))
+  // その後に 1 回目の条件なしの失敗が届いても、最新の結果を「読み込み失敗」で上書きしない
+  let late_failure = search_run(shown, [
+    CourseListLoaded(0, first_seq, Err(Network("接続できません"))),
+    CourseListLoaded(0, first_seq, Ok(search_list([]))),
+  ])
+  assert_eq(late_failure, shown)
+}
+
+///|
+test "最新の条件なしの要求の失敗は反映し、再試行は新しい番号で送り直す（BR11.2、BR11.7）" {
+  let (started, _) = @web.update(@web.init_model(), UrlChanged("/"))
+  let (filtered, _) = @web.update(started, CategoryChanged("technology"))
+  let (reset, _) = @web.update(filtered, ResetConditions)
+  let failed = search_run(reset, [
+    CourseListLoaded(0, reset.search_request_seq, Err(Http(503, "停止中"))),
+  ])
+  assert_eq(failed.course_list, Failed(Http(503, "停止中")))
+  let (retried, effects) = @web.update(failed, RetryCourseList)
+  assert_eq(retried.course_list, Loading)
+  assert_true(retried.search_request_seq > reset.search_request_seq)
+  assert_eq(effects, [FetchCourses(0, retried.search_request_seq)])
+  // 再試行の前の要求の応答は、成功でも捨てる
+  let stale = search_run(retried, [
+    CourseListLoaded(0, reset.search_request_seq, Ok(search_list([]))),
+  ])
+  assert_eq(stale, retried)
 }
 
 ///|
@@ -256,10 +309,15 @@ test "0 件は Loaded の 0 件になり、条件をリセットで既定に戻�
   assert_eq(reset.search_input, @web.default_search_input())
   assert_eq(reset.period_error, None)
   assert_eq(reset.course_list, Loading)
-  assert_eq(effects, [FetchCourses(0), ReplaceUrl("/")])
+  assert_eq(effects, [
+    FetchCourses(0, reset.search_request_seq),
+    ReplaceUrl("/"),
+  ])
   // リセット後の条件なしの応答は反映する
   let all = search_list([search_row("C001", "入門")])
-  let shown = search_run(reset, [CourseListLoaded(0, Ok(all))])
+  let shown = search_run(reset, [
+    CourseListLoaded(0, reset.search_request_seq, Ok(all)),
+  ])
   assert_eq(shown.course_list, Loaded(all))
 }
 
@@ -338,10 +396,16 @@ test "従業員を切り替えると探索条件も既定に戻し、前の従�
     EmployeeSwitched(Ok({ ..search_me(), employee_id: Some("E002"), })),
   )
   assert_eq(switched.search_input, @web.default_search_input())
-  assert_eq(effects, [PushUrl("/"), FetchCourses(1)])
+  assert_eq(effects, [
+    PushUrl("/"),
+    FetchCourses(1, switched.search_request_seq),
+  ])
   let stale = search_run(switched, [
     SearchLoaded(0, old_seq, Ok(search_list([]))),
     SearchLoaded(1, old_seq, Ok(search_list([]))),
+    // 前の従業員の条件なしの要求（番号 1）の応答も捨てる
+    CourseListLoaded(0, 1, Ok(search_list([]))),
+    CourseListLoaded(1, 1, Err(Network("接続できません"))),
   ])
   assert_eq(stale, switched)
 }

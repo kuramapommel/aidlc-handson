@@ -1,28 +1,27 @@
 // コース一覧の探索（U2）の更新関数の部分（純粋関数）。frontend-components.md の 4 節。
 // 待ち（150 ms）・通信・URL の書き換えは Effect の値として返すだけで、時計やタイマーは使わない（NFR6.2）。
 //
-// 古い応答の扱い（BR11.2）: 一覧の要求を送るたびに search_request_seq を進める。
-// - 条件付きの要求（SearchCourses）は番号を持ち、応答の番号が最新のときだけ反映する。
-// - 条件なしの要求は U1 と同じ FetchCourses で送る（U1 の振る舞いを変えないため）。その応答
-//   （CourseListLoaded）は番号を持たないので、最後に送った要求が条件なしのときだけ反映する。
-//   条件なしの応答はどれも同じ条件の結果なので、最後に送った条件の結果になる（NFR2.2）。
+// 古い応答の扱い（BR11.2）: 一覧の要求を送るたびに search_request_seq を進め、要求に番号を持たせる。
+// - 条件なしの要求（FetchCourses。U1 と同じ `GET /api/courses`）も、条件付きの要求（SearchCourses）も
+//   同じ番号の列から番号を振る。
+// - 応答（CourseListLoaded・SearchLoaded）は要求の番号を持ち、番号が最新のときだけ反映する。
+//   そのため「条件なし → 条件あり → 条件なし」と送っても、最初の条件なしの要求の応答（失敗を含む）が
+//   後から届いて最新の結果を上書きすることはない（NFR2.2）。
 
 ///|
 /// 一覧の要求を送る。番号を進め、件数と一覧の部分だけを読み込み中にする（全画面は読み込み直さない）。
 /// 待っているキーワードの送信は取り消す（同じ条件を 2 回送らないため）。
 fn request_course_list(model : Model) -> (Model, Array[Effect]) {
   let seq = model.search_request_seq + 1
-  let unconditioned = model.search_input == default_search_input()
   let next = {
     ..model,
     search_request_seq: seq,
     keyword_debounce: model.keyword_debounce + 1,
-    latest_request_unconditioned: unconditioned,
     course_list: Loading,
     condition_errors: None,
   }
-  let effect = if unconditioned {
-    FetchCourses(model.generation)
+  let effect = if model.search_input == default_search_input() {
+    FetchCourses(model.generation, seq)
   } else {
     SearchCourses(model.generation, seq, model.search_input)
   }
@@ -115,15 +114,17 @@ fn on_search_loaded(
 }
 
 ///|
-/// 条件なしの一覧の応答（U1 の CourseListLoaded）。最後に送った要求が条件なしのときだけ反映する。
+/// 条件なしの一覧の応答（CourseListLoaded）。番号が最新でない・画面を移った・従業員を切り替えた後の
+/// 応答は、成功でも失敗でも捨てる（BR11.2）。
 fn on_course_list_loaded(
   model : Model,
   from : Int32,
+  seq : Int32,
   result : Result[CourseList, FetchError],
 ) -> (Model, Array[Effect]) {
   guard from == model.generation &&
-    model.route is CourseListPage &&
-    model.latest_request_unconditioned else {
+    seq == model.search_request_seq &&
+    model.route is CourseListPage else {
     return (model, [])
   }
   let last_results = match result {

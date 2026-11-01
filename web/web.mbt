@@ -18,10 +18,15 @@ pub fn effect_to_cmd(
       request_cmd(Get, api_base + "/api/me", None, result => {
         emit(MeLoaded(generation, fetch_result(result, decode_me)))
       })
-    FetchCourses(generation) =>
+    // 条件なしの一覧。応答に要求の番号を結び付けて返す（BR11.2）
+    FetchCourses(generation, seq) =>
       request_cmd(Get, api_base + "/api/courses", None, result => {
         emit(
-          CourseListLoaded(generation, fetch_result(result, decode_course_list)),
+          CourseListLoaded(
+            generation,
+            seq,
+            fetch_result(result, decode_course_list),
+          ),
         )
       })
     FetchCourseDetail(generation, course_id) =>

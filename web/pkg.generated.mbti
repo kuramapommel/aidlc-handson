@@ -191,7 +191,7 @@ pub(all) struct CourseRow {
 
 pub(all) enum Effect {
   FetchMe(Int32)
-  FetchCourses(Int32)
+  FetchCourses(Int32, Int32)
   FetchCourseDetail(Int32, String)
   FetchTicket(Int32, String)
   FetchEmployees
@@ -256,7 +256,6 @@ pub(all) struct Model {
   period_error : String?
   keyword_debounce : Int32
   search_request_seq : Int32
-  latest_request_unconditioned : Bool
   last_results : CourseList?
   condition_errors : Array[ConditionFieldError]?
 } derive(Eq, @debug.Debug)
@@ -267,7 +266,7 @@ pub(all) enum Msg {
   ExternalLinkClicked(String)
   MeLoaded(Int32, Result[Me, FetchError])
   RetryMe
-  CourseListLoaded(Int32, Result[CourseList, FetchError])
+  CourseListLoaded(Int32, Int32, Result[CourseList, FetchError])
   RetryCourseList
   CourseDetailLoaded(Int32, String, Result[CourseDetail, FetchError])
   RetryCourseDetail

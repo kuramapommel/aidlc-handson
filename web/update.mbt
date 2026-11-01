@@ -21,7 +21,6 @@ pub fn init_model() -> Model {
     period_error: None,
     keyword_debounce: 0,
     search_request_seq: 0,
-    latest_request_unconditioned: true,
     last_results: None,
     condition_errors: None,
   }
@@ -142,7 +141,8 @@ pub fn update(model : Model, msg : Msg) -> (Model, Array[Effect]) {
         (model, [])
       }
     RetryMe => ({ ..model, me: Loading, }, [FetchMe(generation)])
-    CourseListLoaded(from, result) => on_course_list_loaded(model, from, result)
+    CourseListLoaded(from, seq, result) =>
+      on_course_list_loaded(model, from, seq, result)
     // 一覧の「再試行」は今の探索条件で送り直す（条件なしなら U1 と同じ要求。BR11.7）
     RetryCourseList | RetrySearch => on_retry_search(model)
     CourseDetailLoaded(from, course_id, result) =>
@@ -323,7 +323,7 @@ fn on_url_changed(model : Model, path : String) -> (Model, Array[Effect]) {
 fn enter_route(model : Model, route : Route) -> (Model, Array[Effect]) {
   let generation = model.generation
   match route {
-    // 今の探索条件で一覧を取得する（条件なしなら U1 と同じ FetchCourses）
+    // 今の探索条件で一覧を取得する（条件なしなら U1 と同じ要求の FetchCourses。どちらも番号付き）
     CourseListPage =>
       request_course_list({ ..model, purchase: Idle, notice: None, })
     CourseDetailPage(course_id) =>
@@ -514,6 +514,8 @@ fn on_employee_switched(
   match result {
     Ok(me) => {
       let generation = model.generation + 1
+      // 待っているキーワードの送信と、前の従業員の一覧・探索の応答を無効にする
+      let seq = model.search_request_seq + 1
       (
         {
           route: CourseListPage,
@@ -528,14 +530,12 @@ fn on_employee_switched(
           ticket: NotAsked,
           search_input: default_search_input(),
           period_error: None,
-          // 待っているキーワードの送信と、前の従業員の探索の応答を無効にする
           keyword_debounce: model.keyword_debounce + 1,
-          search_request_seq: model.search_request_seq + 1,
-          latest_request_unconditioned: true,
+          search_request_seq: seq,
           last_results: None,
           condition_errors: None,
         },
-        [PushUrl(route_to_path(CourseListPage)), FetchCourses(generation)],
+        [PushUrl(route_to_path(CourseListPage)), FetchCourses(generation, seq)],
       )
     }
     Err(error) =>

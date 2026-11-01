@@ -200,11 +200,9 @@ pub(all) struct Model {
   period_error : String?
   /// キーワードの入力ごとに進める番号。待ち終わりの番号がこれと同じときだけ送る（BR11.1）
   keyword_debounce : Int32
-  /// 一覧の要求を送るたびに進める番号。応答の番号がこれと同じときだけ反映する（BR11.2）
+  /// 一覧の要求（条件なし・条件付きのどちらも）を送るたびに進める番号。
+  /// 応答の番号がこれと同じときだけ反映する（BR11.2）
   search_request_seq : Int32
-  /// 最後に送った一覧の要求が条件なし（U1 と同じ `FetchCourses`）だったか。
-  /// 条件なしの応答（CourseListLoaded）は番号を持たないため、これが真のときだけ反映する
-  latest_request_unconditioned : Bool
   /// 最後に表示できた一覧（400 のときに一覧をそれまでのままにするため。BR11.9）
   last_results : CourseList?
   /// 万一の 400 の案内（不正な条件の一覧。BR11.9）
@@ -223,7 +221,8 @@ pub(all) enum Msg {
   ExternalLinkClicked(String)
   MeLoaded(Int32, Result[Me, FetchError])
   RetryMe
-  CourseListLoaded(Int32, Result[CourseList, FetchError])
+  /// 条件なしの一覧の応答（従業員の世代, 要求の番号, 結果）
+  CourseListLoaded(Int32, Int32, Result[CourseList, FetchError])
   RetryCourseList
   CourseDetailLoaded(Int32, String, Result[CourseDetail, FetchError])
   RetryCourseDetail
@@ -266,7 +265,8 @@ pub(all) enum Msg {
 /// 更新関数が外に出す作用（コマンドの中身）。[effect_to_cmd] が rabbita のコマンドにする。
 pub(all) enum Effect {
   FetchMe(Int32)
-  FetchCourses(Int32)
+  /// 条件なしのコース一覧の要求（従業員の世代, 要求の番号）。U1 と同じ `GET /api/courses` を送る
+  FetchCourses(Int32, Int32)
   FetchCourseDetail(Int32, String)
   FetchTicket(Int32, String)
   FetchEmployees
@@ -277,7 +277,7 @@ pub(all) enum Effect {
   ReplaceUrl(String)
   LoadUrl(String)
   /// 探索条件付きのコース一覧の要求（従業員の世代, 要求の番号, 条件）。
-  /// 条件なしの一覧は U1 と同じ FetchCourses で要求する
+  /// 条件なしの一覧は FetchCourses で要求する（番号は同じ search_request_seq から振る）
   SearchCourses(Int32, Int32, SearchInput)
   /// キーワードの待ち（keyword_debounce_ms 後に KeywordSettled(番号) を届ける。BR11.1）
   WaitKeyword(Int32)

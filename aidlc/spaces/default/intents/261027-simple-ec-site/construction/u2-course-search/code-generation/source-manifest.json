@@ -28,6 +28,7 @@
     { "path": "web/view.mbt" },
     { "path": "web/view_pages.mbt" },
     { "path": "web/web.mbt" },
+    { "path": "web/web_test.mbt" },
     { "path": "web/search.mbt" },
     { "path": "web/search_test.mbt" },
     { "path": "web/update_search.mbt" },
