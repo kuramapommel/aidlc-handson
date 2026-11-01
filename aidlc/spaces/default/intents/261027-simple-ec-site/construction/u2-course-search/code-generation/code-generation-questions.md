@@ -1,11 +1,12 @@
 # Code Generation Plan Approval
 
-AI-DLC writes this file when it asks you to approve the plan. To answer here
-instead of in chat, write your answer after `[Answer]:` and say done.
+AI-DLC built this plan without asking because plan approval is off for this
+piece of work. This file is the record and asks nothing; to look at a plan
+before it is built, ask in chat.
 
 ## Plan Approval
 
-Approve the code plan for u2-course-search?
+Built without asking: plan approval is off for this piece of work (set by you).
 
 - Builds: コース一覧の探索（キーワード・カテゴリ・空席ありのみ・期間・4 つの並べ替え）、条件の検証と 400、よみがな、画面の探索フォーム・URL 同期・0 件と失敗の表示
 - Touches: `crates/course_catalog/`（探索の関数）、`crates/in_memory_store/src/seed.rs`（よみがな）、`crates/web_api/`（一覧の受け口）、`web/`（探索の状態・更新・描画）、`README.md`
@@ -14,11 +15,8 @@ Approve the code plan for u2-course-search?
 Full plan: aidlc/spaces/default/intents/261027-simple-ec-site/construction/u2-course-search/code-generation/code-generation-plan.md
 Test instructions: aidlc/spaces/default/intents/261027-simple-ec-site/construction/u2-course-search/code-generation/unit-test-instructions.md
 
-[Approval Fingerprint]: sha256:v3:1057c14bfd083c4c5d6a99079cfff74a78206f6922425d0c62fc27eafef9033c
-[Planned Source]: 027b3a6d6af0f3c575aba288dbbe0eca9c72768e9f7d45796746a638ab108fe2
+[Approval Fingerprint]: sha256:v3:a5a41428b4eb770475a39c9e850614ee72653d3ee10ae2787c94c4c23bc5f5ba
+[Planned Source]: fa1f6248e241fd8bf9837244886a073cbcc5f553a5b344036e030c3c23728ff8
 
-- A. Approve Plan
-- B. Request Changes
-- C. I'll edit the files
 
-[Answer]: A. Approve Plan
+[Answer]: Plan approval off
