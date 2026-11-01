@@ -25,7 +25,7 @@
 - **Sensors**: on (from scope workshop)
 - **Learnings**: on (from scope workshop)
 - **Summary Confirmation**: on (from scope workshop)
-- **Plan Approval**: on (from scope workshop)
+- **Plan Approval**: off (set by you)
 - **Collaborators**: off (from scope workshop)
 
 ## Workspace State
@@ -147,7 +147,7 @@ Per unit: [TBD]
 - **Current Stage**: functional-design
 - **Next Stage**: nfr-requirements
 - **Status**: Running
-- **Last Updated**: 2026-10-30T11:22:24Z
+- **Last Updated**: 2026-11-01T02:19:23Z
 
 ## Session Resume Point
 - **Last Completed Stage**: delivery-planning
