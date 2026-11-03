@@ -56,6 +56,7 @@ fn view_page(model : Model, emit : @cmd.Emit[Msg]) -> @html.Html {
     CourseDetailPage(_) => view_course_detail_page(model, emit)
     PurchaseConfirmPage(_, _) => view_purchase_confirm_page(model, emit)
     PurchaseCompletePage(_) => view_purchase_complete_page(model, emit)
+    MyTicketsPage => view_my_tickets_page(model, emit)
     NotFoundPage =>
       view_not_found("ページが見つかりません", "not-found-page")
   }

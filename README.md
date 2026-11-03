@@ -6,13 +6,14 @@
 > **ローカル検証専用です。公開された環境に置いてはなりません。**
 > ログイン機能はなく、Cookie に入った従業員 ID をそのまま認証済みの従業員として扱います（ADR-008）。Cookie の値を書き換えれば他人として操作できます。Web API と静的ファイルサーバーは 127.0.0.1 だけで待ち受けます。
 
-## 現在の状況（U1 購入の最小の流れ・U2 コース探索）
+## 現在の状況（U1 購入の最小の流れ・U2 コース探索・U3 購入済みチケット）
 
 | 部分 | 状況 |
 | --- | --- |
 | Rust の業務の部品・データストア・Web API・静的ファイルサーバー（`crates/`） | 実装済み。テストはすべて成功 |
 | MoonBit の画面（`web/`） | 実装済み。コース一覧 → コースの詳細と日程の選択 → 購入確認 → 完了と e チケット、従業員の切り替え。更新関数のテストはすべて成功。説明は [web/README.md](web/README.md) |
 | U2 コース探索 | 実装済み。コース一覧でキーワード・カテゴリ・空席ありのみ・期間の絞り込みと 4 つの並べ替え、件数、URL への反映と復元、0 件と「条件をリセット」、読み込み失敗と「再試行」（下の「デモの手順」の 6〜10） |
+| U3 購入済みチケット | 実装済み。ヘッダーの「購入済みチケット」と購入の完了画面の「購入済みチケットを見る」から開く一覧（`/my-tickets`）。これからのチケットを開催日時の近い順、そのあとに「受講済み」を新しい順に並べ、その場で開閉して e チケットの 7 項目を表示。0 件の案内と「コース一覧へ」、読み込み失敗と「再試行」（下の「デモの手順」の 11〜15） |
 
 画面の TEA の実行環境・描画・URL の扱いには `moonbit-community/rabbita` を、Web API との通信（Cookie 付きの fetch・専用ヘッダー・2xx 以外の本文の受け取り）には `mizchi/js_web` を使っています。rabbita 0.17.0 の通信の部品ではこれらができなかったためです（経緯は [web/README.md](web/README.md#通信に-mizchijs_web-を使う理由)）。
 
@@ -71,11 +72,16 @@ cargo test -p in_memory_store reading_          # 初期データのよみがな
 cargo test -p web_api --test search             # 探索の受け口（400・性能・データが変わらない）
 moon -C web test --target js search_test.mbt    # 画面の探索（待ち・古い応答・URL・0 件・失敗）
 
+# U3（購入済みチケット）のテストだけを実行する
+cargo test -p purchasing owned_tickets_tests      # 一覧の絞り込み・受講済みの判定・並び
+cargo test -p web_api --test my_tickets          # 一覧の受け口（他人のチケット・0 件・購入の直後・性能）
+moon -C web test --target js my_tickets_test.mbt # 画面の一覧（読み込みの状態・開閉・導線・切り替え）
+
 # 確認コマンド: fmt → clippy（警告はエラー）→ cargo test → moon test → 画面のビルド
 bash scripts/verify.sh
 ```
 
-応答時間のテスト（`crates/web_api/tests/performance.rs`）は、一覧・詳細・購入・操作中の従業員・チケット詳細にそれぞれ 100 回ずつ要求を送り、95 パーセンタイルが 200 ms 以内であることを確かめます。`cargo test -p web_api --test performance -- --nocapture` で測った値が表示されます。探索（U2）は `crates/web_api/tests/search.rs` で、条件の組み合わせを替えた 100 回の 95 パーセンタイルと、数万文字のキーワードの応答時間が 200 ms 以内であることを確かめます（`cargo test -p web_api --test search -- --nocapture` で値が表示されます）。
+応答時間のテスト（`crates/web_api/tests/performance.rs`）は、一覧・詳細・購入・操作中の従業員・チケット詳細にそれぞれ 100 回ずつ要求を送り、95 パーセンタイルが 200 ms 以内であることを確かめます。`cargo test -p web_api --test performance -- --nocapture` で測った値が表示されます。探索（U2）は `crates/web_api/tests/search.rs` で、条件の組み合わせを替えた 100 回の 95 パーセンタイルと、数万文字のキーワードの応答時間が 200 ms 以内であることを確かめます（`cargo test -p web_api --test search -- --nocapture` で値が表示されます）。購入済みチケットの一覧（U3）は `crates/web_api/tests/my_tickets.rs` で、100 回の 95 パーセンタイルが 200 ms 以内であることを確かめます（`cargo test -p web_api --test my_tickets -- --nocapture` で値が表示されます）。
 
 ## 起動（2 つのプロセス）
 
@@ -124,6 +130,14 @@ Web API と静的ファイルサーバーを起動し、<http://localhost:8080/>
 9. **並べ替え**: 「並べ替え」で、開催日が近い順（既定）・受講料の安い順・受講料の高い順・コース名順（よみがなの五十音順）を選べます。同じ値のコースはコース ID の順です。
 10. **URL の共有と戻る**: 条件を付けた URL（例: <http://localhost:8080/?category=management&available=true&sort=fee-asc>）を別のタブで開くと、同じ条件と結果が出ます。URL の不正な項目（存在しないカテゴリなど）は無視されて URL から取り除かれます。コースの詳細へ移ってから「コース一覧へ戻る」やブラウザの戻るで一覧に戻ると、条件と結果が保たれます。従業員を切り替えると、探索条件は既定に戻ります。
 
+購入済みチケット（U3）。ヘッダーの「購入済みチケット」から、どの画面でも開けます。
+
+11. **ヘッダーから開く**: 伊藤 さくら（E005）に切り替えて、ヘッダーの「購入済みチケット」を押すと、<http://localhost:8080/my-tickets> に移り、初期データで購入済みの 3 枚が開催日時の近い順に並びます。各行にはコース名・開催日時・会場または形式・チケット番号が出ます。開催日時を過ぎたチケットは、これからのチケットの後に「受講済み」と文字で示して新しい順に並びます。
+12. **詳細を開く**: 行の「詳細を見る」を押すと、その場で完了画面と同じ 7 項目（チケット番号・従業員名・コース名・開催日時・会場または形式・購入日時・支払ったポイント）が出て、ボタンは「詳細を閉じる」に変わります。通信はせず、複数のチケットを同時に開けます。一覧を開き直すと閉じた状態に戻ります。
+13. **購入の完了画面から開く**: 手順 1 のように購入すると、完了画面に「購入済みチケットを見る」が出ます（「コース一覧へ戻る」もそのまま）。押すと一覧を読み込み直し、いま購入したチケットが含まれます。
+14. **チケットのない従業員**: 高橋 遥（E001。購入前）で一覧を開くと「購入済みのチケットはありません」と「コース一覧へ」が出ます。
+15. **切り替え**: 一覧を表示中に従業員を切り替えると、コース一覧へ戻り、前の従業員のチケットは残りません。Web API を止めて一覧を開くと、理由と「再試行」が出ます。
+
 主要な流れ（一覧 → 詳細と日程の選択 → 購入確認 → 完了）は、全画面を読み込み直さずに画面内で移動します。Tab・Shift+Tab・Enter・Space・矢印キーだけでも操作できます（探索条件の入力・「条件をリセット」・「再試行」も同じ）。
 
 ## Web API
@@ -137,6 +151,7 @@ Web API と静的ファイルサーバーを起動し、<http://localhost:8080/>
 | 切り替え用の従業員一覧 | `GET /api/employees` | |
 | 従業員の切り替え | `POST /api/session/employee` | 本文 `{"employeeId":"E002"}`。CSRF 対策のヘッダーが必要 |
 | 購入 | `POST /api/purchases` | 本文 `{"sessionId":"S0001"}`（金額は読み取りません）。成功は 201、拒否は 409 と理由 |
+| 購入済みチケットの一覧（U3） | `GET /api/tickets` | Cookie の操作中の従業員のチケットだけを `{"tickets": [...]}` で返す。各要素はチケット 1 枚の詳細と同じ項目に `attendance`（`upcoming`・`attended`）を足したもの。並びはこれからを開催日時の近い順、そのあとに受講済みを新しい順。クエリで従業員を指定しても無視し、チケットがない・存在しない従業員は空の並び |
 | チケット 1 枚の詳細 | `GET /api/tickets/{ticketId}` | 本人のものでなければ 404 |
 
 書き込みの要求（`POST`）は、`Origin` が画面のオリジンで、かつ `X-Requested-With: aidlc-handson-web` が付いているときだけ受け付けます。満たさなければ 403 です。拒否の理由は `employee-not-found`・`company-not-active`・`session-not-found`・`closed`・`already-purchased`・`full`・`insufficient-balance` のどれか 1 つです。
@@ -185,6 +200,9 @@ curl -s -b cookies.txt http://localhost:3000/api/courses/C001
 
 # 3. S0001 を購入する（e チケットと購入後の残高 35,000 pt が返る）
 curl -s -b cookies.txt "${H[@]}" -d '{"sessionId":"S0001"}' http://localhost:3000/api/purchases
+
+# 3b. 購入済みチケットの一覧（U3。いま購入した 1 枚が返る）
+curl -s -b cookies.txt http://localhost:3000/api/tickets
 
 # 4. 残高不足の従業員（鈴木 美咲・20,000 pt）に切り替えて購入する → 409 insufficient-balance
 curl -s -c cookies.txt -b cookies.txt "${H[@]}" -d '{"employeeId":"E003"}' http://localhost:3000/api/session/employee

@@ -10,6 +10,7 @@ pub fn route_from_path(path : String) -> Route {
     ["courses", course_id, "sessions", session_id, "confirm"] =>
       PurchaseConfirmPage(course_id, session_id)
     ["tickets", ticket_id] => PurchaseCompletePage(ticket_id)
+    ["my-tickets"] => MyTicketsPage
     _ => NotFoundPage
   }
 }
@@ -23,6 +24,7 @@ pub fn route_to_path(route : Route) -> String {
     PurchaseConfirmPage(course_id, session_id) =>
       "/courses/\{course_id}/sessions/\{session_id}/confirm"
     PurchaseCompletePage(ticket_id) => "/tickets/\{ticket_id}"
+    MyTicketsPage => "/my-tickets"
     NotFoundPage => "/not-found"
   }
 }

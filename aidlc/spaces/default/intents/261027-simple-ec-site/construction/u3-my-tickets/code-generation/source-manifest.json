@@ -1,0 +1,27 @@
+{
+  "stage": "code-generation",
+  "unit": "u3-my-tickets",
+  "version": 1,
+  "writes": [
+    { "path": "crates/purchasing/src/owned_tickets.rs" },
+    { "path": "crates/purchasing/src/owned_tickets_tests.rs" },
+    { "path": "crates/purchasing/src/lib.rs" },
+    { "path": "crates/web_api/src/app.rs" },
+    { "path": "crates/web_api/src/handlers.rs" },
+    { "path": "crates/web_api/src/dto.rs" },
+    { "path": "crates/web_api/tests/my_tickets.rs" },
+    { "path": "web/update_my_tickets.mbt" },
+    { "path": "web/view_my_tickets.mbt" },
+    { "path": "web/my_tickets_test.mbt" },
+    { "path": "web/model.mbt" },
+    { "path": "web/route.mbt" },
+    { "path": "web/update.mbt" },
+    { "path": "web/decode.mbt" },
+    { "path": "web/web.mbt" },
+    { "path": "web/view.mbt" },
+    { "path": "web/view_header.mbt" },
+    { "path": "web/view_pages.mbt" },
+    { "path": "web/static/style.css" },
+    { "path": "README.md" }
+  ]
+}
