@@ -96,9 +96,15 @@
 
 
 
+
+
+
+
+
+
 - **Active Unit**: u3-my-tickets
 
-- **Unit Stage**: functional-design
+- **Unit Stage**: code-generation
 
 - **Unit State**: in-progress
 
@@ -164,14 +170,14 @@ Per unit: [TBD]
 | --- | --- | --- | --- | --- | --- |
 | u1-purchase-skeleton | - | [x] | [x] | [x] | [x] |
 | u2-course-search | - | [x] | [x] | [x] | [x] |
-| u3-my-tickets | - | [ ] | [ ] | [ ] | [ ] |
+| u3-my-tickets | - | [x] | [x] | [ ] | [-] |
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
 - **Current Stage**: functional-design
 - **Next Stage**: nfr-requirements
 - **Status**: Running
-- **Last Updated**: 2026-11-01T14:48:54Z
+- **Last Updated**: 2026-11-03T11:58:47Z
 
 ## Session Resume Point
 - **Last Completed Stage**: delivery-planning

@@ -1,0 +1,15 @@
+{
+  "stage": "functional-design",
+  "unit": "u3-my-tickets",
+  "upstream_ids": ["AC4.2.1", "AC4.2.2", "AC4.2.3", "AC4.2.4", "AC4.2.5"],
+  "coverage": [
+    { "id": "AC4.2.1", "status": "OK", "target": "BR12.1, BR12.2, BR12.3, BR13.1, BR14.5" },
+    { "id": "AC4.2.2", "status": "OK", "target": "BR14.3" },
+    { "id": "AC4.2.3", "status": "OK", "target": "BR12.4, BR13.2, BR14.4" },
+    { "id": "AC4.2.4", "status": "OK", "target": "BR14.6, BR14.1" },
+    { "id": "AC4.2.5", "status": "OK", "target": "BR14.7, BR14.8" }
+  ],
+  "reverse": [
+    { "id": "BR14.2", "status": "N/A", "target": "読み込み中・失敗の表示の区別（NFR4 由来。受け入れ基準を持たない品質のルール）" }
+  ]
+}
