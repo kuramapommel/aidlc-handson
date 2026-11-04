@@ -178,3 +178,12 @@ Web API に接続できないとき（Web API が止まっている、ネット�
 | U3-NFR3.3 | `u3-my-tickets/nfr-requirements/security-requirements.md` | 一覧は読み出しの要求なので、U1 の CSRF 対策（BR6.3）の対象外とする。書き込みの受け口は U3 で増やさない — | /api/tickets は読み出し用のルーター。書き込みの受け口は 2 つのまま | コードレビュー（crates/web_api/src/app.rs） | build-and-test | Met |
 | U3-NFR3.4 | `u3-my-tickets/nfr-requirements/security-requirements.md` | 画面は、コース名・会場・従業員名など Web API から受け取った文字列を文字として表示し、HTML として解釈させない（U1 の NFR3.11 を一覧にも当てはめる） — | 生の HTML を入れる箇所の検索で 0 件 | コードの検索 | build-and-test | Met |
 | U3-NFR3.5 | `u3-my-tickets/nfr-requirements/security-requirements.md` | 従業員を切り替えたら、前の従業員のチケットを画面に残さない BR14.8 | 自動テストが成功 | bash scripts/verify.sh（Rust 88 件・画面 57 件 成功） | build-and-test | Met |
+
+## Loop-Back Log
+
+### Loop-back 1 — 2026-11-04T06:21:24Z
+
+- **Diagnosis**: Web API に接続できないとき、`web/http.mbt` の `request_cmd` が通信の失敗を `"\{error}"` で文字列にするところで JavaScript の例外になり、画面が「読み込んでいます」のまま止まる（失敗の表示と「再試行」が出ない）。
+- **Root-cause stage**: code-generation（U1 `u1-purchase-skeleton`。`web/http.mbt` は U1 で作成）
+- **Planned fix**（利用者の指示「retry を入れます。３回試してダメなら『時間をおいて再度試してください』的なメッセージを出します。」）: 通信の失敗を文字列にせず扱う。接続できない失敗は自動で再試行し、合わせて 3 回試してもだめなら「時間をおいて再度お試しください」という趣旨のメッセージと「再試行」を出す。自動の再試行は読み出し（GET）に限り、購入（POST）は二重の送信を避けるため U1 のとおり自動で再送しない（BR7.6 の「もう一度試す」を使う）。失敗の経路を通るテストを足す。
+- **Estimated impact**: 作業量 小〜中（`web/http.mbt` と失敗の表示の文言、テスト数件。U1 のコード生成の計画を直して再承認し、U1〜U3 の確認をやり直す）。費用 なし（ローカルのみ）。リスク 低（成功時の動作は変わらない。失敗時に最大 3 回まで要求が増える）。

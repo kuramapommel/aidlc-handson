@@ -7,6 +7,7 @@
 
 ## Deviations
 <!-- example: 2026-05-29T10:14:32Z — skipped the optional caching layer the stage prose suggested; the dataset is small enough that it adds risk -->
+- 2026-11-04T06:21:24Z — Loop-back 1: 接続失敗時の画面の例外を直すため U1 のコード生成に戻す; 利用者の指示で、読み出しは自動で 3 回まで再試行し、だめなら時間をおいて試すよう案内する形にした。購入（POST）は二重の送信を避けるため自動で再送しない。
 
 ## Tradeoffs
 <!-- example: 2026-05-29T10:14:32Z — picked TDD over BDD this run; the team is unit-first and the domain is well-understood -->
