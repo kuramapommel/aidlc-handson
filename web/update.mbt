@@ -572,7 +572,7 @@ pub fn fetch_error_text(error : FetchError) -> String {
   match error {
     NotFound => "見つかりません"
     Http(_, message) => message
-    Network(_) => "通信に失敗しました"
+    Network(_) => network_error_message
     Decode(_) => "応答を読み取れませんでした"
   }
 }

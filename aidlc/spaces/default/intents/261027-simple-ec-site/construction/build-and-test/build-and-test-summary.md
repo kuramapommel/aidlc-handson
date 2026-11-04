@@ -5,11 +5,11 @@
 | 項目 | 結果 |
 | --- | --- |
 | ビルド | 成功（`cargo build --workspace`、`bash scripts/build-web.sh`） |
-| 自動テスト | すべて成功（Rust 88 件、画面 57 件、`bash scripts/verify.sh` 成功） |
-| ブラウザでの確認 | 主要な流れは成功。**Web API に接続できないときの表示で不具合 1 件**（下記） |
-| 目標の確認 | 116 件中 Met 108 件、Not Met 8 件、Unverified 0 件 |
+| 自動テスト | すべて成功（Rust 88 件、画面 63 件、`bash scripts/verify.sh` 成功） |
+| ブラウザでの確認 | 成功（Web API に接続できないときの不具合 1 件を、この工程で直して確認し直した） |
+| 目標の確認 | 116 件中 Met 116 件（修正後） |
 | ユニットをまたぐ網羅 | 受け入れ基準 72 件（欠番 1 件を除く）と NFR 10 件はすべてカバー。FR 36 件のうち 33 件は受け入れ基準・業務ルール経由の間接のカバー、FR7.1〜FR7.3（初期データ）は traceability.json に記載がない（`cross-unit-traceability.md`） |
-| 判定 | **失敗**（Not Met の目標がある） |
+| 判定 | 成功（目標はすべて Met。ユニットをまたぐ網羅の記録の不足は下記） |
 
 前提: ローカル環境（Linux、Chromium、Rust 最新 stable、moon 0.1.20261102、Node.js 22）。moon はこの工程で、利用者の承認を得て公式の手順で導入した。
 
@@ -27,7 +27,7 @@
 
 行カバレッジの下限は設けない（workshop・Minimal）。各ユニットの受け入れ基準・業務ルール・NFR を、コード生成の `traceability.json` で実装とテストのファイルに結び付けている。
 
-## 不具合
+## 見つかった不具合（この工程で修正済み）
 
 Web API に接続できないとき（Web API が止まっている、ネットワークが切れている）、画面が JavaScript の例外 `TypeError: Cannot read properties of undefined (reading '_1')` で止まり、「…を読み込んでいます」のまま、失敗の表示と「再試行」が出ない。
 
@@ -37,7 +37,7 @@ Web API に接続できないとき（Web API が止まっている、ネット�
 - 発生した時点: U3 より前の版（U1・U2 のコード）でも同じく起きる。U3 で入った不具合ではない。今回入れた moon（0.1.20261102）でビルドした結果で確認しており、U1・U2 を作った時点の moon では起きていなかった可能性もある（未確認）。
 - 自動テストで見つからなかった理由: 画面のテストは更新関数に失敗のメッセージを直接与えており、`request_cmd` の失敗の文字列化を通らない。
 
-## 直し方の候補
+## 直し方（利用者の指示で、この工程の中で直した）
 
 `web/http.mbt` の `request_cmd` で、通信の失敗を `"\{error}"` で文字列にせず、決まった文言（例:「Web API に接続できませんでした」）を返す。あわせて、この失敗の経路を通るテスト（または失敗の文言を作る小さな純粋関数のテスト）を足す。
 
@@ -50,7 +50,7 @@ Web API に接続できないとき（Web API が止まっている、ネット�
 | --- | --- |
 | ビルドできる | はい |
 | テストできる | はい（すべて成功） |
-| ローカルでの動作確認（デプロイは行わない） | いいえ（Web API に接続できないときの表示の不具合を直すまで） |
+| ローカルでの動作確認（デプロイは行わない） | はい |
 
 ## Target Verification Matrix
 
@@ -69,7 +69,7 @@ Web API に接続できないとき（Web API が止まっている、ネット�
 | U1-NFR1.4 | `u1-purchase-skeleton/nfr-requirements/performance-requirements.md` | 画面の移動（一覧 → 詳細 → 購入確認 → 完了） 全画面を読み込み直さず、画面内の移動で表示する。Web API の応答を受けてから 300 ms 以内に表示へ反映する | 一覧→詳細→確認→完了を操作して表示を確認（確定から完了表示まで 109 ms） | e2e（Playwright）・Web API のログ | build-and-test | Met |
 | U1-NFR1.5 | `u1-purchase-skeleton/nfr-requirements/performance-requirements.md` | 処理の組み立て 一覧の集計・日程の状態の判定は、1 回の要求の中でチケットの数を日程ごとに 1 回だけ数える（同じ数え直しを繰り返さない） | コードレビュー | コードの検索とレビュー／bash scripts/verify.sh | build-and-test | Met |
 | U1-NFR4.1 | `u1-purchase-skeleton/nfr-requirements/performance-requirements.md` | 「コース一覧 → 日程の選択（コースの詳細）→ 購入確認 → 完了」を、ページの遷移 3 回で完了できる | キーボードだけの購入でページの遷移 3 回 | e2e（Playwright）・Web API のログ | build-and-test | Met |
-| U1-NFR4.2 | `u1-purchase-skeleton/nfr-requirements/performance-requirements.md` | 読み込み中・読み込み失敗の表示を区別する（U1 の一覧は 0 件にならないが、文言を分けておく。BR7.1） | Web API に接続できないとき、画面が JavaScript の例外（Error の文字列化）で止まり「読み込んでいます」のまま。失敗の表示と「再試行」が出ない | e2e: Web API を止めて画面を開く（pageerror TypeError reading _1） | build-and-test | Not Met |
+| U1-NFR4.2 | `u1-purchase-skeleton/nfr-requirements/performance-requirements.md` | 読み込み中・読み込み失敗の表示を区別する（U1 の一覧は 0 件にならないが、文言を分けておく。BR7.1） | 接続できないとき 3 回試してから「…読み込めませんでした（Web API に接続できませんでした。時間をおいて再度お試しください）」と「再試行」を表示。画面の例外なし | e2e（Web API を止めて画面を開く）、web/network_retry_test.mbt | build-and-test | Met |
 | U1-NFR4.3 | `u1-purchase-skeleton/nfr-requirements/performance-requirements.md` | 確定の処理中であることが表示で分かり、確定ボタンは無効になる（BR7.3） | 画面のテストで確認（ブラウザでは処理が速く表示を観測できず） | e2e（Playwright）・Web API のログ | build-and-test | Met |
 | U1-NFR4.4 | `u1-purchase-skeleton/nfr-requirements/performance-requirements.md` | 購入できなかったときに、理由と次の操作（別の日程を選ぶ・一覧へ戻る・もう一度試す）が必ず表示される（BR7.4、BR7.6） | 自動テストが成功 | bash scripts/verify.sh（Rust 88 件・画面 57 件 成功） | build-and-test | Met |
 | U1-NFR5.1 | `u1-purchase-skeleton/nfr-requirements/performance-requirements.md` | 主要な流れ（一覧 → 詳細と日程の選択 → 購入確認 → 確定 → 完了）を、キーボードだけで操作できる | キーボードだけで一覧→詳細→日程→確認→確定 | e2e（Playwright）・Web API のログ | build-and-test | Met |
@@ -80,7 +80,7 @@ Web API に接続できないとき（Web API が止まっている、ネット�
 | U1-NFR2.2 | `u1-purchase-skeleton/nfr-requirements/reliability-requirements.md` | 残席 1 の日程に同時に 2 件の購入が届いても、チケットは 1 枚だけ発行され、もう 1 件は満席として拒否される（BR5.4、AC3.3.4） | 自動テストが成功 | bash scripts/verify.sh（Rust 88 件・画面 57 件 成功） | build-and-test | Met |
 | U1-NFR2.4 | `u1-purchase-skeleton/nfr-requirements/reliability-requirements.md` | 同じ従業員の同じ日程への購入が重ねて届いても、チケットは 1 枚だけ発行される（BR5.5、AC3.4.1、AC3.4.2） | 自動テストが成功 | bash scripts/verify.sh（Rust 88 件・画面 57 件 成功） | build-and-test | Met |
 | U1-NFR2.5 | `u1-purchase-skeleton/nfr-requirements/reliability-requirements.md` | Web API の処理中に予期しない失敗が起きても、データストアの状態は変わらず、プロセスは次の要求を受け付け続ける（1 件の失敗でサーバー全体を止めない） | 自動テストとコードレビュー | コードの検索とレビュー／bash scripts/verify.sh | build-and-test | Met |
-| U1-NFR2.6 | `u1-purchase-skeleton/nfr-requirements/reliability-requirements.md` | 画面は、Web API と通信できないときも操作不能にならない。一覧・詳細では失敗の表示と「再試行」、購入では「もう一度試す」と確かめ方の案内を出す（BR7.1、BR7.6） | Web API に接続できないとき、画面が JavaScript の例外（Error の文字列化）で止まり「読み込んでいます」のまま。失敗の表示と「再試行」が出ない | e2e: Web API を止めて画面を開く（pageerror TypeError reading _1） | build-and-test | Not Met |
+| U1-NFR2.6 | `u1-purchase-skeleton/nfr-requirements/reliability-requirements.md` | 画面は、Web API と通信できないときも操作不能にならない。一覧・詳細では失敗の表示と「再試行」、購入では「もう一度試す」と確かめ方の案内を出す（BR7.1、BR7.6） | 接続できないとき 3 回試してから「…読み込めませんでした（Web API に接続できませんでした。時間をおいて再度お試しください）」と「再試行」を表示。画面の例外なし | e2e（Web API を止めて画面を開く）、web/network_retry_test.mbt | build-and-test | Met |
 | U1-NFR6.1 | `u1-purchase-skeleton/nfr-requirements/reliability-requirements.md` | 業務の部品は純粋関数で書く。現在時刻と乱数は引数（関数）として受け取り、業務の部品の中で時計や乱数を直接呼ばない | 業務の crate に現在時刻・乱数の直接の呼び出しなし（検索） | コードの検索とレビュー／bash scripts/verify.sh | build-and-test | Met |
 | U1-NFR6.2 | `u1-purchase-skeleton/nfr-requirements/reliability-requirements.md` | データは不変として扱う。状態の更新は「現在の状態 → 新しい状態」を返す関数で表し、可変な内部状態を持つオブジェクトやクラス階層による設計をしない。可変な共有状態は、データストアの… | コードレビュー（状態の更新は新しい値を返す形） | コードの検索とレビュー／bash scripts/verify.sh | build-and-test | Met |
 | U1-NFR6.3 | `u1-purchase-skeleton/nfr-requirements/reliability-requirements.md` | 部品の組み立ては、関数の部分適用（クロージャ）で行う。依存の逆転にインターフェース（トレイトのオブジェクト）を使わず、関数を受け渡す（project.md の決定） | 業務の crate に dyn（トレイトのオブジェクト）なし | コードの検索とレビュー／bash scripts/verify.sh | build-and-test | Met |
@@ -115,8 +115,8 @@ Web API に接続できないとき（Web API が止まっている、ネット�
 | U2-NFR1.1 | `u2-course-search/nfr-requirements/performance-requirements.md` | 探索条件付きのコース一覧（`GET /api/courses`。キーワード・カテゴリ・空席ありのみ・期間・並べ替えの組み合わせ） 95% の要求が 200 ms 以内に応答する | 探索 p95 0.404 ms | cargo test -p web_api --test performance/search/my_tickets -- --nocapture | build-and-test | Met |
 | U2-NFR1.2 | `u2-course-search/nfr-requirements/performance-requirements.md` | 条件を変えてから一覧に反映するまで（画面） キーワードは入力が止まってから、ほかの条件は変えてから 300 ms 以内に表示へ反映する（キーワードの 150 ms の待ちを含む。B… | キーワードの反映 204 ms（ブラウザで計測） | e2e（Playwright） | build-and-test | Met |
 | U2-NFR1.3 | `u2-course-search/nfr-requirements/performance-requirements.md` | 画面の再描画 条件を変えても全画面を読み込み直さず、探索条件の入力欄の値・入力中の文字の位置を保つ | 条件の変更で全画面を読み込み直さず入力の値が保たれる | e2e（Playwright）・Web API のログ | build-and-test | Met |
-| U2-NFR4.1 | `u2-course-search/nfr-requirements/performance-requirements.md` | 読み込み中・0 件・読み込み失敗の 3 つを、文言の違う別の表示にする（BR11.6、BR11.7） | Web API に接続できないとき、画面が JavaScript の例外（Error の文字列化）で止まり「読み込んでいます」のまま。失敗の表示と「再試行」が出ない | e2e: Web API を止めて画面を開く（pageerror TypeError reading _1） | build-and-test | Not Met |
-| U2-NFR4.2 | `u2-course-search/nfr-requirements/performance-requirements.md` | 0 件では「条件をリセット」、失敗では「再試行」を必ず出す | Web API に接続できないとき、画面が JavaScript の例外（Error の文字列化）で止まり「読み込んでいます」のまま。失敗の表示と「再試行」が出ない | e2e: Web API を止めて画面を開く（pageerror TypeError reading _1） | build-and-test | Not Met |
+| U2-NFR4.1 | `u2-course-search/nfr-requirements/performance-requirements.md` | 読み込み中・0 件・読み込み失敗の 3 つを、文言の違う別の表示にする（BR11.6、BR11.7） | 接続できないとき 3 回試してから「…読み込めませんでした（Web API に接続できませんでした。時間をおいて再度お試しください）」と「再試行」を表示。画面の例外なし | e2e（Web API を止めて画面を開く）、web/network_retry_test.mbt | build-and-test | Met |
+| U2-NFR4.2 | `u2-course-search/nfr-requirements/performance-requirements.md` | 0 件では「条件をリセット」、失敗では「再試行」を必ず出す | 接続できないとき 3 回試してから「…読み込めませんでした（Web API に接続できませんでした。時間をおいて再度お試しください）」と「再試行」を表示。画面の例外なし | e2e（Web API を止めて画面を開く）、web/network_retry_test.mbt | build-and-test | Met |
 | U2-NFR4.3 | `u2-course-search/nfr-requirements/performance-requirements.md` | 期間の前後が逆のとき、入力欄の近くに案内を出し、一覧はそれまでのまま（BR11.5） | 自動テストが成功 | bash scripts/verify.sh（Rust 88 件・画面 57 件 成功） | build-and-test | Met |
 | U2-NFR4.4 | `u2-course-search/nfr-requirements/performance-requirements.md` | 詳細から一覧へ戻ったとき、条件と結果が保たれる（BR11.8） | 詳細から戻ると条件と件数（4 件）が保たれる | e2e（Playwright）・Web API のログ | build-and-test | Met |
 | U2-NFR5.1 | `u2-course-search/nfr-requirements/performance-requirements.md` | 探索条件のすべての入力（キーワード・カテゴリ・空席ありのみ・開始日・終了日・並べ替え）と「条件をリセット」「再試行」を、キーボードだけで操作できる | Tab で探索の入力・並べ替えに届く | e2e（Playwright）・Web API のログ | build-and-test | Met |
@@ -124,7 +124,7 @@ Web API に接続できないとき（Web API が止まっている、ネット�
 | U2-NFR5.3 | `u2-course-search/nfr-requirements/performance-requirements.md` | 件数の変化と、0 件・失敗・期間の案内を、読み上げ可能な文字で伝える（ライブリージョンと、入力欄に結び付けた説明） | 件数と案内にライブリージョン（course-search-results） | e2e（Playwright）・Web API のログ | build-and-test | Met |
 | U2-NFR2.1 | `u2-course-search/nfr-requirements/reliability-requirements.md` | 探索はデータを書き換えない。探索の受け口を何回呼んでも、残席・残高・チケットは変わらない | 自動テストが成功 | bash scripts/verify.sh（Rust 88 件・画面 57 件 成功） | build-and-test | Met |
 | U2-NFR2.2 | `u2-course-search/nfr-requirements/reliability-requirements.md` | 入力中に連続して送った探索の応答が順不同で届いても、表示は最後に送った条件の結果になる（BR11.2） | 自動テストが成功 | bash scripts/verify.sh（Rust 88 件・画面 57 件 成功） | build-and-test | Met |
-| U2-NFR2.3 | `u2-course-search/nfr-requirements/reliability-requirements.md` | 探索の失敗（通信の失敗・5xx・400）で画面が操作不能にならない。失敗の表示と「再試行」、または一覧を保った案内を出す（BR11.7、BR11.9） | Web API に接続できないとき、画面が JavaScript の例外（Error の文字列化）で止まり「読み込んでいます」のまま。失敗の表示と「再試行」が出ない | e2e: Web API を止めて画面を開く（pageerror TypeError reading _1） | build-and-test | Not Met |
+| U2-NFR2.3 | `u2-course-search/nfr-requirements/reliability-requirements.md` | 探索の失敗（通信の失敗・5xx・400）で画面が操作不能にならない。失敗の表示と「再試行」、または一覧を保った案内を出す（BR11.7、BR11.9） | 接続できないとき 3 回試してから「…読み込めませんでした（Web API に接続できませんでした。時間をおいて再度お試しください）」と「再試行」を表示。画面の例外なし | e2e（Web API を止めて画面を開く）、web/network_retry_test.mbt | build-and-test | Met |
 | U2-NFR6.1 | `u2-course-search/nfr-requirements/reliability-requirements.md` | 条件の検証・キーワードの正規化・絞り込み・並べ替えは純粋関数で書く。現在時刻は引数で受け取る | 探索の関数は現在時刻を引数で受け取る純粋関数 | コードレビュー／自動テスト | build-and-test | Met |
 | U2-NFR6.2 | `u2-course-search/nfr-requirements/reliability-requirements.md` | キーワードの入力の待ち（150 ms）は、画面の更新関数が「待ちのコマンド」を返し、待ち終わりのメッセージの番号で最新かを判断する形にする。更新関数の中で時計やタイマーを直接使わな… | 待ちは更新関数が返すコマンド（画面のテストで確認） | bash scripts/verify.sh（画面 57 件） | build-and-test | Met |
 | U2-NFR6.3 | `u2-course-search/nfr-requirements/reliability-requirements.md` | 並べ替えの比較は、どの並べ方でも最後にコース ID で比べ、毎回同じ順になる（安定した全順序） | 並べ替えのテストで同値はコース ID 順 | bash scripts/verify.sh | build-and-test | Met |
@@ -147,15 +147,15 @@ Web API に接続できないとき（Web API が止まっている、ネット�
 | U3-NFR10.3 | `u3-my-tickets/nfr-requirements/observability-requirements.md` | チケットの日程やコースが見つからないデータの不整合で 5xx にしたときは、どのチケット ID で起きたかをログに残す | 自動テストが成功 | bash scripts/verify.sh（Rust 88 件・画面 57 件 成功） | build-and-test | Met |
 | U3-NFR1.1 | `u3-my-tickets/nfr-requirements/performance-requirements.md` | 購入済みチケットの一覧（`GET /api/tickets`） 初期データの規模で、95% の要求が 200 ms 以内に応答する（NFR1 はコース一覧・詳細の目標だが、U3 の… | 一覧 p95 0.275 ms | cargo test -p web_api --test performance/search/my_tickets -- --nocapture | build-and-test | Met |
 | U3-NFR1.2 | `u3-my-tickets/nfr-requirements/performance-requirements.md` | 一覧のチケットを開く（BR14.4） 通信せず、操作した直後の再描画で詳細を表示する（BR13.2） | 開閉で通信しない（画面のテスト）。ブラウザで開閉を確認 | e2e（Playwright）・Web API のログ | build-and-test | Met |
-| U3-NFR4.1 | `u3-my-tickets/nfr-requirements/performance-requirements.md` | 一覧の読み込み中・0 件・読み込み失敗の 3 つを、文言の違う別の表示にする（BR14.2・BR14.3） | Web API に接続できないとき、画面が JavaScript の例外（Error の文字列化）で止まり「読み込んでいます」のまま。失敗の表示と「再試行」が出ない | e2e: Web API を止めて画面を開く（pageerror TypeError reading _1） | build-and-test | Not Met |
-| U3-NFR4.2 | `u3-my-tickets/nfr-requirements/performance-requirements.md` | 0 件では「コース一覧へ」、失敗では「再試行」を必ず出す | Web API に接続できないとき、画面が JavaScript の例外（Error の文字列化）で止まり「読み込んでいます」のまま。失敗の表示と「再試行」が出ない | e2e: Web API を止めて画面を開く（pageerror TypeError reading _1） | build-and-test | Not Met |
+| U3-NFR4.1 | `u3-my-tickets/nfr-requirements/performance-requirements.md` | 一覧の読み込み中・0 件・読み込み失敗の 3 つを、文言の違う別の表示にする（BR14.2・BR14.3） | 接続できないとき 3 回試してから「…読み込めませんでした（Web API に接続できませんでした。時間をおいて再度お試しください）」と「再試行」を表示。画面の例外なし | e2e（Web API を止めて画面を開く）、web/network_retry_test.mbt | build-and-test | Met |
+| U3-NFR4.2 | `u3-my-tickets/nfr-requirements/performance-requirements.md` | 0 件では「コース一覧へ」、失敗では「再試行」を必ず出す | 接続できないとき 3 回試してから「…読み込めませんでした（Web API に接続できませんでした。時間をおいて再度お試しください）」と「再試行」を表示。画面の例外なし | e2e（Web API を止めて画面を開く）、web/network_retry_test.mbt | build-and-test | Met |
 | U3-NFR4.3 | `u3-my-tickets/nfr-requirements/performance-requirements.md` | ヘッダーの「購入済みチケット」と、完了画面の「購入済みチケットを見る」から、1 回の操作で一覧へ移れる（BR14.6・BR14.7） | ヘッダー・完了画面のリンクから 1 回で一覧へ | e2e（Playwright）・Web API のログ | build-and-test | Met |
 | U3-NFR5.1 | `u3-my-tickets/nfr-requirements/performance-requirements.md` | ヘッダーのリンク・完了画面のリンク・開閉のボタン・「再試行」・「コース一覧へ」を、キーボードだけで操作できる | ヘッダーのリンク・完了画面のリンク・開閉ボタン・「コース一覧へ」をキーボードで操作（「再試行」は接続失敗の不具合で確認できず） | e2e（Playwright）・Web API のログ | build-and-test | Met |
 | U3-NFR5.2 | `u3-my-tickets/nfr-requirements/performance-requirements.md` | 開閉のボタンに名前（「詳細を見る」「詳細を閉じる」）を付け、開いているかどうかを支援技術に伝える（BR14.4） | aria-expanded が false→true、aria-controls の先が存在 | e2e（Playwright）・Web API のログ | build-and-test | Met |
 | U3-NFR5.3 | `u3-my-tickets/nfr-requirements/performance-requirements.md` | 「受講済み」を色だけでなく文字で示す（BR14.5） | 自動テストが成功 | bash scripts/verify.sh（Rust 88 件・画面 57 件 成功） | build-and-test | Met |
 | U3-NFR2.1 | `u3-my-tickets/nfr-requirements/reliability-requirements.md` | 一覧はデータを書き換えない。一覧の受け口を何回呼んでも、残席・残高・チケットは変わらない | 自動テストが成功 | bash scripts/verify.sh（Rust 88 件・画面 57 件 成功） | build-and-test | Met |
 | U3-NFR2.2 | `u3-my-tickets/nfr-requirements/reliability-requirements.md` | 購入の直後に一覧を開くと、いま購入したチケットが含まれる（一覧を開くたびに読み込み直す。BR14.1） | 自動テストが成功 | bash scripts/verify.sh（Rust 88 件・画面 57 件 成功） | build-and-test | Met |
-| U3-NFR2.3 | `u3-my-tickets/nfr-requirements/reliability-requirements.md` | 一覧の読み込みに失敗しても画面が操作不能にならず、失敗の表示と「再試行」を出す。一覧の画面でないときに届いた応答は表示に使わない | Web API に接続できないとき、画面が JavaScript の例外（Error の文字列化）で止まり「読み込んでいます」のまま。失敗の表示と「再試行」が出ない | e2e: Web API を止めて画面を開く（pageerror TypeError reading _1） | build-and-test | Not Met |
+| U3-NFR2.3 | `u3-my-tickets/nfr-requirements/reliability-requirements.md` | 一覧の読み込みに失敗しても画面が操作不能にならず、失敗の表示と「再試行」を出す。一覧の画面でないときに届いた応答は表示に使わない | 接続できないとき 3 回試してから「…読み込めませんでした（Web API に接続できませんでした。時間をおいて再度お試しください）」と「再試行」を表示。画面の例外なし | e2e（Web API を止めて画面を開く）、web/network_retry_test.mbt | build-and-test | Met |
 | U3-NFR6.1 | `u3-my-tickets/nfr-requirements/reliability-requirements.md` | 一覧の絞り込み・受講済みの判定・並べは純粋関数で書く。現在時刻は引数で受け取る | 一覧の関数は現在時刻を引数で受け取る純粋関数 | コードレビュー／自動テスト | build-and-test | Met |
 | U3-NFR6.2 | `u3-my-tickets/nfr-requirements/reliability-requirements.md` | 開閉の状態は画面の Model の不変な値（開いているチケット ID の集合）で持ち、更新関数が新しい値を返す | open_ticket_ids を不変の配列で持ち toggle_ticket_id が新しい配列を返す（画面のテスト） | bash scripts/verify.sh | build-and-test | Met |
 | U3-NFR6.3 | `u3-my-tickets/nfr-requirements/reliability-requirements.md` | 並べの比較は、開催日時・購入日時・チケット番号の順で比べ、毎回同じ順になる（安定した全順序。BR12.2） | 同点の並びのテストが成功 | cargo test -p purchasing owned_tickets_tests | build-and-test | Met |
@@ -175,6 +175,19 @@ Web API に接続できないとき（Web API が止まっている、ネット�
 
 ## 未解決の事項
 
-- 上の不具合（Not Met 8 件の原因）。
 - FR は code-generation の traceability.json に直接は載っておらず、受け入れ基準・業務ルール経由の間接のカバー。FR7.1〜FR7.3（初期データ）は ID の記載がない（実装は `crates/in_memory_store/src/seed.rs` と、そのテスト）。
 - 「確定の処理中」の表示（U1 NFR4.3）は、処理が速くブラウザでは観測できなかった（画面のテストで確認）。
+
+## 修正の内容（2026-11-04T10:36:09Z）
+
+利用者の指示「retry を入れます。３回試してダメなら『時間をおいて再度試してください』的なメッセージを出します。」と「今の工程の中で直す」による。コード生成には戻さず、この工程の中で直した。
+
+| ファイル | 変更 |
+| --- | --- |
+| `web/http.mbt` | 通信の失敗を文字列にせず、決まった文言 `network_error_message` を返す。読み出し（GET）は接続の失敗で最大 3 回まで試す（待ちは 300 ms・600 ms）。書き込み（POST）は二重に送らないよう再試行しない |
+| `web/update.mbt` | 通信の失敗の表示の文言を `network_error_message`（「Web API に接続できませんでした。時間をおいて再度お試しください」）にする |
+| `web/network_retry_test.mbt` | 再試行の規則・待ち・文言のテスト 6 件（新規） |
+
+購入の確定で通信できなかったときの表示（U1 の BR7.6「もう一度試す」と購入できたかの確かめ方）は変えていない。
+
+この変更はコード生成の記録（U1 の source-manifest.json・traceability.json）には載せていない。Guard Policy が off のため、ユニットの外の変更として扱われる。
