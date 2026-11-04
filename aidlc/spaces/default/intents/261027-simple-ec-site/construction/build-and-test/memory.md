@@ -7,6 +7,7 @@
 
 ## Deviations
 <!-- example: 2026-05-29T10:14:32Z — skipped the optional caching layer the stage prose suggested; the dataset is small enough that it adds risk -->
+- 2026-11-04T10:36:09Z — Loop-back 1 はコード生成に戻さず、利用者の指示「今の工程の中で直す」で Build and Test の中で直した; 共通の通信の部品の小さな修正に全ユニットの計画の再承認は重すぎるため。直したファイルはユニットの記録の外の変更として扱われる。
 - 2026-11-04T06:21:24Z — Loop-back 1: 接続失敗時の画面の例外を直すため U1 のコード生成に戻す; 利用者の指示で、読み出しは自動で 3 回まで再試行し、だめなら時間をおいて試すよう案内する形にした。購入（POST）は二重の送信を避けるため自動で再送しない。
 
 ## Tradeoffs
