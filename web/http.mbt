@@ -70,7 +70,58 @@ async fn send(
 }
 
 ///|
+/// 読み出し（GET）で通信そのものが失敗したときに試す回数（最初の 1 回を含む）。
+pub let max_read_attempts : Int = 3
+
+///|
+/// 通信そのものが失敗したとき（接続できない・CORS で拒否されたなど）の説明。
+/// 失敗の中身は JavaScript の例外のことがあり、文字列にすると例外になるため、決まった文言を使う。
+pub let network_error_message : String = "Web API に接続できませんでした。時間をおいて再度お試しください"
+
+///|
+/// `attempt` 回目（1 から数える）の通信が失敗したとき、もう一度試すか。
+/// 読み出し（GET）だけを再試行する。購入などの書き込み（POST）は、二重に送らないよう再試行しない。
+pub fn should_retry(verb : HttpMethod, attempt : Int) -> Bool {
+  match verb {
+    Get => attempt < max_read_attempts
+    Post => false
+  }
+}
+
+///|
+/// `attempt` 回目の失敗のあと、次を試すまで待つ時間（ミリ秒）。回を重ねるほど長く待つ。
+pub fn retry_delay_ms(attempt : Int) -> Int {
+  300 * attempt
+}
+
+///|
+/// 要求を送り、通信そのものが失敗したら `should_retry` に従って待ってから試し直す。
+async fn send_with_retry(
+  verb : HttpMethod,
+  url : String,
+  body : String?,
+) -> ApiResponse raise Error {
+  for attempt = 1; ; attempt = attempt + 1 {
+    let result : Result[ApiResponse, Error] = try {
+      Ok(send(verb, url, body))
+    } catch {
+      e => Err(e)
+    }
+    match result {
+      Ok(response) => return response
+      Err(error) =>
+        if should_retry(verb, attempt) {
+          @js.sleep(retry_delay_ms(attempt))
+        } else {
+          raise error
+        }
+    }
+  }
+}
+
+///|
 /// 要求を送るコマンド。結果（応答、または通信の失敗の説明）を `on_result` でメッセージにする。
+/// 通信の失敗は `network_error_message` にする（失敗の中身は文字列にしない）。
 pub fn request_cmd(
   verb : HttpMethod,
   url : String,
@@ -81,9 +132,9 @@ pub fn request_cmd(
     (result : Result[ApiResponse, Error]) => {
       match result {
         Ok(response) => on_result(Ok(response))
-        Err(error) => on_result(Err("\{error}"))
+        Err(_) => on_result(Err(network_error_message))
       }
     },
-    async fn() { send(verb, url, body) },
+    async fn() { send_with_retry(verb, url, body) },
   )
 }

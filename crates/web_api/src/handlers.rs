@@ -15,14 +15,15 @@ use eligibility::{
 use in_memory_store::StoreState;
 use purchasing::{
     PurchaseApproval, PurchaseDecision, TicketId, TicketView, find_own_ticket, issued_counter,
-    issued_counts, purchased_session_ids, session_availability, ticket_view,
+    issued_counts, list_owned_tickets, purchased_session_ids, session_availability, ticket_view,
 };
 use serde::de::DeserializeOwned;
 use training_budget::{EmployeeRef, balance_of};
 
 use crate::dto::{
-    CourseDetailDto, CourseDto, CourseListDto, CourseRowDto, EmployeeListDto, MeDto, PurchaseBody,
-    PurchaseResultDto, SessionDto, SwitchEmployeeBody, SwitchableEmployeeDto, TicketDto,
+    CourseDetailDto, CourseDto, CourseListDto, CourseRowDto, EmployeeListDto, MeDto,
+    OwnedTicketDto, OwnedTicketListDto, PurchaseBody, PurchaseResultDto, SessionDto,
+    SwitchEmployeeBody, SwitchableEmployeeDto, TicketDto,
 };
 use crate::errors::ApiError;
 
@@ -213,6 +214,41 @@ pub fn purchase_result(
             }))
         }
     }
+}
+
+/// `GET /api/tickets`: 操作中の従業員の購入済みチケットの一覧（U3。BR13.1、BR13.2）。
+///
+/// 従業員は Cookie から得た `employee_id` だけで決め、クエリや本文では指定させない（NFR3.1）。
+/// 存在しない従業員・Cookie なしは空の並び（BR12.1、NFR3.2）。データを書き換えない（NFR2.1）。
+/// 日程・コースが見つからないチケットがあれば、チケット ID だけをログに残して 500 にする
+/// （NFR10.3。チケット番号・従業員名・コース名はログに出さない。NFR10.2）。
+pub fn my_tickets(
+    state: &StoreState,
+    employee_id: Option<&EmployeeId>,
+    now: DateTime<Utc>,
+) -> Result<Json<OwnedTicketListDto>, ApiError> {
+    let find_session = |sid: &SessionId| {
+        find_session_with_course(&state.courses, &state.sessions, sid)
+            .map(|(s, c)| (s.clone(), c.clone()))
+    };
+    let owned = list_owned_tickets(
+        &state.tickets,
+        employee_id,
+        now,
+        find_session,
+        employee_finder(&state.employees),
+    )
+    .map_err(|error| {
+        let ids: Vec<&str> = error.ticket_ids.iter().map(TicketId::as_str).collect();
+        tracing::error!(
+            ticket_ids = %ids.join(","),
+            "購入済みチケットの一覧を作れません（日程またはコースが見つかりません）"
+        );
+        ApiError::Internal
+    })?;
+    Ok(Json(OwnedTicketListDto {
+        tickets: owned.iter().map(OwnedTicketDto::from).collect(),
+    }))
 }
 
 /// `GET /api/tickets/{ticketId}`: 本人のチケットだけを返す。他人のものは 404（BR5.10、NFR3.7）。

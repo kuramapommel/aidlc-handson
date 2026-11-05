@@ -9,6 +9,13 @@ fn view_header(model : Model, emit : @cmd.Emit[Msg]) -> @html.Html {
       attrs=testid("header-home-link"),
       "研修コース e チケット",
     ),
+    // U3: どの画面からでも購入済みチケットの一覧へ移る（BR14.7）。U1 の表示は変えない
+    @html.a(
+      href=route_to_path(MyTicketsPage),
+      class="header-my-tickets-link",
+      attrs=testid("header-my-tickets-link"),
+      my_tickets_link_label,
+    ),
     view_me(model.me, emit),
     view_switcher(model, emit),
   ])

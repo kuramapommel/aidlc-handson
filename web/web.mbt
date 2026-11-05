@@ -86,6 +86,16 @@ pub fn effect_to_cmd(
     // キーワードの待ち（rabbita の @cmd.delay。更新関数はタイマーを使わない。NFR6.2）
     WaitKeyword(ticket) =>
       @cmd.delay(emit(KeywordSettled(ticket)), keyword_debounce_ms)
+    // 購入済みチケットの一覧（U3）。従業員は Cookie だけで伝え、URL に含めない（BR13.1）
+    FetchMyTickets(generation) =>
+      request_cmd(Get, api_base + "/api/tickets", None, result => {
+        emit(
+          MyTicketsLoaded(
+            generation,
+            fetch_result(result, decode_owned_tickets),
+          ),
+        )
+      })
   }
 }
 

@@ -23,6 +23,8 @@ pub fn init_model() -> Model {
     search_request_seq: 0,
     last_results: None,
     condition_errors: None,
+    my_tickets: NotAsked,
+    open_ticket_ids: [],
   }
 }
 
@@ -287,6 +289,10 @@ pub fn update(model : Model, msg : Msg) -> (Model, Array[Effect]) {
     SearchLoaded(from, seq, result) =>
       on_search_loaded(model, from, seq, result)
     ResetConditions => on_reset_conditions(model)
+    // ---- U3: 購入済みチケット（update_my_tickets.mbt） ----
+    MyTicketsLoaded(from, result) => on_my_tickets_loaded(model, from, result)
+    RetryMyTickets => on_retry_my_tickets(model)
+    TicketDetailToggled(ticket_id) => on_ticket_detail_toggled(model, ticket_id)
   }
 }
 
@@ -349,6 +355,8 @@ fn enter_route(model : Model, route : Route) -> (Model, Array[Effect]) {
         _ =>
           ({ ..model, ticket: Loading, }, [FetchTicket(generation, ticket_id)])
       }
+    // 開くたびに読み込み直し、開閉の状態は閉じた状態に戻す（U3 の BR14.1、BR14.4）
+    MyTicketsPage => request_my_tickets(model)
     NotFoundPage => (model, [])
   }
 }
@@ -534,6 +542,9 @@ fn on_employee_switched(
           search_request_seq: seq,
           last_results: None,
           condition_errors: None,
+          // 前の従業員の購入済みチケットと開閉の状態を捨てる（U3 の BR14.8）
+          my_tickets: NotAsked,
+          open_ticket_ids: [],
         },
         [PushUrl(route_to_path(CourseListPage)), FetchCourses(generation, seq)],
       )
@@ -561,7 +572,7 @@ pub fn fetch_error_text(error : FetchError) -> String {
   match error {
     NotFound => "見つかりません"
     Http(_, message) => message
-    Network(_) => "通信に失敗しました"
+    Network(_) => network_error_message
     Decode(_) => "応答を読み取れませんでした"
   }
 }

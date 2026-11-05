@@ -5,7 +5,7 @@ use chrono::{DateTime, SecondsFormat, Utc};
 use chrono_tz::Asia::Tokyo;
 use course_catalog::{Course, CourseListRow, Session};
 use eligibility::{EligibilityResult, SwitchableEmployee};
-use purchasing::{SessionAvailability, TicketView};
+use purchasing::{OwnedTicket, SessionAvailability, TicketView};
 use serde::{Deserialize, Serialize};
 
 /// 日時を日本時間のタイムゾーン付きの文字列にする（例: `2026-11-09T13:00:00+09:00`）。
@@ -201,6 +201,32 @@ impl From<&TicketView> for TicketDto {
             paid_points: view.ticket.paid_points,
         }
     }
+}
+
+/// 購入済みチケットの一覧の 1 件（U3 の OwnedTicket。BR13.2）。
+/// 項目名と日時の形式は U1 のチケット詳細（[`TicketDto`]）と同じで、受講の状態を足す。
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OwnedTicketDto {
+    #[serde(flatten)]
+    pub ticket: TicketDto,
+    /// `upcoming`（これから）か `attended`（受講済み）。BR12.3
+    pub attendance: &'static str,
+}
+
+impl From<&OwnedTicket> for OwnedTicketDto {
+    fn from(owned: &OwnedTicket) -> Self {
+        Self {
+            ticket: TicketDto::from(&owned.view),
+            attendance: owned.attendance.as_str(),
+        }
+    }
+}
+
+/// `GET /api/tickets` の応答（U3 の OwnedTicketList）。0 件は空の並び。
+#[derive(Debug, Serialize)]
+pub struct OwnedTicketListDto {
+    pub tickets: Vec<OwnedTicketDto>,
 }
 
 /// `POST /api/purchases` の成功の応答。

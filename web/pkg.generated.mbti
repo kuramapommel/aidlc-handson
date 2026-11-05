@@ -12,6 +12,10 @@ import {
 // Values
 pub fn app(api_base~ : String) -> @rabbita.App
 
+pub fn attendance_from_string(String) -> Attendance
+
+pub fn attendance_label(Attendance) -> String?
+
 pub fn category_label(String) -> String
 
 pub let category_values : Array[String]
@@ -33,6 +37,8 @@ pub fn decode_course_list(ApiResponse) -> Result[CourseList, FetchError]
 pub fn decode_employees(ApiResponse) -> Result[Array[Employee], FetchError]
 
 pub fn decode_me(ApiResponse) -> Result[Me, FetchError]
+
+pub fn decode_owned_tickets(ApiResponse) -> Result[Array[OwnedTicket], FetchError]
 
 pub fn decode_search_response(ApiResponse) -> Result[CourseList, SearchFailure]
 
@@ -70,13 +76,29 @@ pub fn is_calendar_date(String) -> Bool
 
 pub fn is_category_value(String) -> Bool
 
+pub fn is_just_purchased(Model, Ticket) -> Bool
+
 pub fn is_period_reversed(SearchInput) -> Bool
+
+pub fn is_ticket_open(Model, String) -> Bool
 
 pub let keyword_debounce_ms : Int32
 
 pub fn list_path(SearchInput) -> String
 
 pub fn location_of(@url.Url) -> String
+
+pub let max_read_attempts : Int32
+
+pub let my_tickets_empty_message : String
+
+pub let my_tickets_link_label : String
+
+pub let my_tickets_loading_message : String
+
+pub let network_error_message : String
+
+pub fn owned_ticket_summary_rows(Ticket) -> Array[(String, String)]
 
 pub fn parse_query(String) -> Array[(String, String)]
 
@@ -102,6 +124,8 @@ pub fn request_headers(HttpMethod) -> Map[String, String]
 
 pub fn restore_search_input(String) -> SearchInput
 
+pub fn retry_delay_ms(Int32) -> Int32
+
 pub fn route_from_path(String) -> Route
 
 pub fn route_to_path(Route) -> String
@@ -116,6 +140,8 @@ pub fn session_status_from_string(String) -> SessionStatus
 
 pub fn session_status_label(SessionStatus) -> String
 
+pub fn should_retry(HttpMethod, Int32) -> Bool
+
 pub fn sort_from_value(String) -> SortOrder?
 
 pub fn sort_label(SortOrder) -> String
@@ -123,6 +149,16 @@ pub fn sort_label(SortOrder) -> String
 pub let sort_orders : Array[SortOrder]
 
 pub fn sort_value(SortOrder) -> String
+
+pub fn ticket_detail_panel_id(String) -> String
+
+pub fn ticket_field_rows(Ticket) -> Array[(String, String)]
+
+pub fn ticket_toggle_expanded(Bool) -> String
+
+pub fn ticket_toggle_label(Bool) -> String
+
+pub fn toggle_ticket_id(Array[String], String) -> Array[String]
 
 pub fn unavailable_notice(Session?) -> String
 
@@ -132,31 +168,45 @@ pub fn venue_label(String?, String) -> String
 
 pub fn view(Model, @cmd.Emit[Msg]) -> @html.Html
 
+pub let view_my_tickets_link_label : String
+
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct ApiResponse {
   status : Int32
   body : String
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
+pub(all) enum Attendance {
+  Upcoming
+  Attended
+  OtherAttendance(String)
+}
+
+#derive(Eq, @debug.Debug)
 pub(all) enum BlockReason {
   NotEligible
   Unavailable(SessionStatus)
   InsufficientBalance(Int32)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct ConditionFieldError {
   field : String
   reason : String
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct ConfirmSummary {
   course : Course
   session : Session
   balance : Int32
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Course {
   course_id : String
   title : String
@@ -166,18 +216,21 @@ pub(all) struct Course {
   fee_points : Int32
   duration_minutes : Int32
   delivery_format : String
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct CourseDetail {
   course : Course
   sessions : Array[Session]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct CourseList {
   courses : Array[CourseRow]
   count : Int32
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct CourseRow {
   course_id : String
   title : String
@@ -187,8 +240,9 @@ pub(all) struct CourseRow {
   delivery_format : String
   next_session_starts_at : String?
   open_session_count : Int32
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Effect {
   FetchMe(Int32)
   FetchCourses(Int32, Int32)
@@ -202,36 +256,43 @@ pub(all) enum Effect {
   LoadUrl(String)
   SearchCourses(Int32, Int32, SearchInput)
   WaitKeyword(Int32)
-} derive(Eq, @debug.Debug)
+  FetchMyTickets(Int32)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Eligibility {
   Eligible
   CompanyNotActive
   EmployeeNotFound
   OtherEligibility(String)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Employee {
   employee_id : String
   display_name : String
   company_name : String
   contract_status : String
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum FetchError {
   NotFound
   Http(Int32, String)
   Network(String)
   Decode(String)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum HttpMethod {
   Get
   Post
-} derive(Eq, @debug.Debug)
+}
 
-type JstDateTime derive(Eq, @debug.Debug)
+#derive(Eq, @debug.Debug)
+type JstDateTime
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Me {
   employee_id : String?
   display_name : String?
@@ -239,8 +300,9 @@ pub(all) struct Me {
   contract_status : String?
   eligibility : Eligibility
   balance : Int32
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Model {
   route : Route
   generation : Int32
@@ -258,8 +320,11 @@ pub(all) struct Model {
   search_request_seq : Int32
   last_results : CourseList?
   condition_errors : Array[ConditionFieldError]?
-} derive(Eq, @debug.Debug)
+  my_tickets : Remote[Array[OwnedTicket]]
+  open_ticket_ids : Array[String]
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Msg {
   UrlChanged(String)
   LinkClicked(String)
@@ -296,8 +361,18 @@ pub(all) enum Msg {
   SearchLoaded(Int32, Int32, Result[CourseList, SearchFailure])
   ResetConditions
   RetrySearch
-} derive(Eq, @debug.Debug)
+  MyTicketsLoaded(Int32, Result[Array[OwnedTicket], FetchError])
+  RetryMyTickets
+  TicketDetailToggled(String)
+}
 
+#derive(Eq, @debug.Debug)
+pub(all) struct OwnedTicket {
+  ticket : Ticket
+  attendance : Attendance
+}
+
+#derive(Eq, @debug.Debug)
 pub(all) enum PurchaseState {
   Idle
   Submitting
@@ -305,14 +380,16 @@ pub(all) enum PurchaseState {
   Rejected(RejectionReason)
   NetworkFailed
   RequestFailed(String)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Readiness {
   Waiting
   Ready(ConfirmSummary)
   Blocked(ConfirmSummary, BlockReason)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum RejectionReason {
   ReasonEmployeeNotFound
   ReasonCompanyNotActive
@@ -322,29 +399,34 @@ pub(all) enum RejectionReason {
   ReasonFull
   ReasonInsufficientBalance
   OtherReason(String, String)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Remote[T] {
   NotAsked
   Loading
   Loaded(T)
   Missing
   Failed(FetchError)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Route {
   CourseListPage
   CourseDetailPage(String)
   PurchaseConfirmPage(String, String)
   PurchaseCompletePage(String)
+  MyTicketsPage
   NotFoundPage
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum SearchFailure {
   InvalidCondition(Array[ConditionFieldError])
   FetchFailed(FetchError)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct SearchInput {
   keyword : String
   category : String
@@ -352,8 +434,9 @@ pub(all) struct SearchInput {
   period_from : String
   period_to : String
   sort : SortOrder
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Session {
   session_id : String
   starts_at : String
@@ -362,30 +445,34 @@ pub(all) struct Session {
   capacity : Int32
   remaining_seats : Int32
   status : SessionStatus
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum SessionStatus {
   Available
   Full
   Closed
   Purchased
   OtherStatus(String)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum SortOrder {
   ByDate
   ByFeeAsc
   ByFeeDesc
   ByName
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Switcher {
   is_open : Bool
   employees : Remote[Array[Employee]]
   is_switching : Bool
   error : String?
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Ticket {
   ticket_id : String
   ticket_number : String
@@ -399,7 +486,7 @@ pub(all) struct Ticket {
   delivery_format : String
   purchased_at : String
   paid_points : Int32
-} derive(Eq, @debug.Debug)
+}
 
 // Type aliases
 

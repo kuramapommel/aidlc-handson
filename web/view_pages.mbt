@@ -574,14 +574,22 @@ fn view_purchase_complete_page(
         emit,
       )
     Loaded(ticket) => {
-      let is_just_purchased = match model.purchase {
-        Succeeded(t) => t.ticket_id == ticket.ticket_id
-        _ => false
-      }
-      let heading = if is_just_purchased {
+      let just_purchased = is_just_purchased(model, ticket)
+      let heading = if just_purchased {
         "購入が完了しました"
       } else {
         "e チケット"
+      }
+      // U3: 購入直後の完了画面にだけ「購入済みチケットを見る」を足す（BR14.6）
+      let my_tickets_link = if just_purchased {
+        @html.a(
+          href=route_to_path(MyTicketsPage),
+          class="my-tickets-link",
+          attrs=testid("ticket-my-tickets-link"),
+          view_my_tickets_link_label,
+        )
+      } else {
+        @html.nothing
       }
       @html.section(
         class="purchase-complete-page",
@@ -590,28 +598,36 @@ fn view_purchase_complete_page(
           @html.h1(heading),
           @html.article(class="ticket", attrs=testid("ticket-view"), [
             @html.h2("e チケット"),
-            field_list(
-              [
-                ("チケット番号", ticket.ticket_number),
-                ("従業員名", ticket.employee_name),
-                ("コース名", ticket.course_title),
-                (
-                  "開催日時",
-                  format_session_time(ticket.starts_at, ticket.ends_at),
-                ),
-                (
-                  "会場または形式",
-                  venue_label(ticket.venue, ticket.delivery_format),
-                ),
-                ("購入日時", format_datetime(ticket.purchased_at)),
-                ("支払ったポイント", format_points(ticket.paid_points)),
-              ],
-              "ticket-fields",
-            ),
+            field_list(ticket_field_rows(ticket), "ticket-fields"),
           ]),
+          my_tickets_link,
           back_to_list_link("ticket-back-link"),
         ],
       )
     }
   }
+}
+
+///|
+/// 表示中のチケットが、いま購入したチケットか（完了画面の見出しとリンクの出し分け）。
+pub fn is_just_purchased(model : Model, ticket : Ticket) -> Bool {
+  match model.purchase {
+    Succeeded(t) => t.ticket_id == ticket.ticket_id
+    _ => false
+  }
+}
+
+///|
+/// e チケットの 7 項目（BR5.9。表示の形は BR7.10）。完了画面と購入済みチケットの詳細で共通に使う
+/// （U3 の BR12.4）。
+pub fn ticket_field_rows(ticket : Ticket) -> Array[(String, String)] {
+  [
+    ("チケット番号", ticket.ticket_number),
+    ("従業員名", ticket.employee_name),
+    ("コース名", ticket.course_title),
+    ("開催日時", format_session_time(ticket.starts_at, ticket.ends_at)),
+    ("会場または形式", venue_label(ticket.venue, ticket.delivery_format)),
+    ("購入日時", format_datetime(ticket.purchased_at)),
+    ("支払ったポイント", format_points(ticket.paid_points)),
+  ]
 }

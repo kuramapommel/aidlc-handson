@@ -183,6 +183,16 @@ where
         }
     };
 
+    // U3: 購入済みチケットの一覧。読み出しの状態と時計を部分適用し、Cookie の従業員だけを使う
+    // （クエリは受け取らない。NFR3.1）。読み出しなので CSRF 対策の対象外（NFR3.3）
+    let my_tickets = {
+        let (read, now) = (read.clone(), now.clone());
+        move |jar: CookieJar| {
+            let employee = read_employee(&jar);
+            ready(handlers::my_tickets(&read(), employee.employee_id(), now()).into_response())
+        }
+    };
+
     let allowed_origin = config.ui_origin_header();
     let writes = Router::new()
         .route("/api/session/employee", post(switch_employee))
@@ -200,6 +210,7 @@ where
         .route("/api/courses/{course_id}", get(course_detail))
         .route("/api/me", get(me))
         .route("/api/employees", get(employees))
+        .route("/api/tickets", get(my_tickets))
         .route("/api/tickets/{ticket_id}", get(ticket))
         .merge(writes)
         .fallback(|| ready(ApiError::NotFound("受け口").into_response()))

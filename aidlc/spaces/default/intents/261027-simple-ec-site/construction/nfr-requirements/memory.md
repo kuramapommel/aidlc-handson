@@ -3,6 +3,7 @@
 
 ## Interpretations
 <!-- example: 2026-05-29T10:14:32Z — chose REST over GraphQL; the consuming team only needs CRUD, revisit if subscriptions land -->
+- 2026-11-03T10:58:30Z — [unit u3-my-tickets] NFR1 の 200 ms の目標は要件ではコース一覧・詳細が対象だが、U3 の一覧の受け口にも同じ目標を当てた; 読み出しだけで規模も小さく、ほかの受け口と目標をそろえるほうが分かりやすいため。
 
 ## Deviations
 <!-- example: 2026-05-29T10:14:32Z — skipped the optional caching layer the stage prose suggested; the dataset is small enough that it adds risk -->

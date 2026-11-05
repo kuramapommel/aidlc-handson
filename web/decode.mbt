@@ -225,6 +225,33 @@ fn ticket_from_json(json : Json) -> Ticket raise DecodeError {
 }
 
 ///|
+/// 受講の状態の値（U3。BR12.3）。
+pub fn attendance_from_string(value : String) -> Attendance {
+  match value {
+    "upcoming" => Upcoming
+    "attended" => Attended
+    other => OtherAttendance(other)
+  }
+}
+
+///|
+/// 購入済みチケットの一覧の 1 件。項目は e チケットと同じで、`attendance` を足したもの（BR13.2）。
+fn owned_ticket_from_json(json : Json) -> OwnedTicket raise DecodeError {
+  let fields = as_object(json, "購入済みチケット")
+  {
+    ticket: ticket_from_fields(fields),
+    attendance: attendance_from_string(get_string(fields, "attendance")),
+  }
+}
+
+///|
+fn owned_tickets_from_json(json : Json) -> Array[OwnedTicket] raise DecodeError {
+  get_array(as_object(json, "購入済みチケットの一覧"), "tickets").map(
+    owned_ticket_from_json,
+  )
+}
+
+///|
 /// エラーの応答の本文 `{"error": {"code", "message", "reason"?}}` から (code, message, reason) を取り出す。
 fn error_body(body : String) -> (String, String, String?) {
   try {
@@ -303,6 +330,14 @@ pub fn decode_employees(
 /// `GET /api/tickets/{ticketId}` の応答。
 pub fn decode_ticket(response : ApiResponse) -> Result[Ticket, FetchError] {
   decode_response(response, ticket_from_json)
+}
+
+///|
+/// `GET /api/tickets` の応答（U3。購入済みチケットの一覧。並びは応答のまま）。
+pub fn decode_owned_tickets(
+  response : ApiResponse,
+) -> Result[Array[OwnedTicket], FetchError] {
+  decode_response(response, owned_tickets_from_json)
 }
 
 ///|

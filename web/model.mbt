@@ -147,12 +147,33 @@ pub(all) struct Ticket {
 } derive(Eq, Debug)
 
 ///|
-/// 現在の画面（frontend-components.md の 3 節）。
+/// チケットの受講の状態（U3。BR12.3）。Web API の時計で決めた値をそのまま使い、画面では判定しない。
+pub(all) enum Attendance {
+  /// これから（`upcoming`）
+  Upcoming
+  /// 受講済み（`attended`）
+  Attended
+  /// 知らない値（受け取った値のまま持つ）
+  OtherAttendance(String)
+} derive(Eq, Debug)
+
+///|
+/// 購入済みチケットの一覧の 1 件（U3 の OwnedTicket。BR13.2）。
+/// 項目は U1 の e チケットと同じで、受講の状態を足したもの。
+pub(all) struct OwnedTicket {
+  ticket : Ticket
+  attendance : Attendance
+} derive(Eq, Debug)
+
+///|
+/// 現在の画面（frontend-components.md の 3 節）。U3 で MyTicketsPage を足した。
 pub(all) enum Route {
   CourseListPage
   CourseDetailPage(String)
   PurchaseConfirmPage(String, String)
   PurchaseCompletePage(String)
+  /// 購入済みチケットの一覧（U3。`/my-tickets`。BR14.1）
+  MyTicketsPage
   NotFoundPage
 } derive(Eq, Debug)
 
@@ -207,6 +228,11 @@ pub(all) struct Model {
   last_results : CourseList?
   /// 万一の 400 の案内（不正な条件の一覧。BR11.9）
   condition_errors : Array[ConditionFieldError]?
+  // ---- U3: 購入済みチケット（frontend-components.md の 2 節） ----
+  /// 購入済みチケットの一覧（並びは Web API の応答のまま。BR12.2）
+  my_tickets : Remote[Array[OwnedTicket]]
+  /// 詳細を開いているチケットの ID（最初は空。URL には残さない。BR14.4）
+  open_ticket_ids : Array[String]
 } derive(Eq, Debug)
 
 ///|
@@ -259,6 +285,12 @@ pub(all) enum Msg {
   SearchLoaded(Int32, Int32, Result[CourseList, SearchFailure])
   ResetConditions
   RetrySearch
+  // ---- U3: 購入済みチケット（frontend-components.md の 4 節） ----
+  /// 購入済みチケットの一覧の応答（従業員の世代, 結果）
+  MyTicketsLoaded(Int32, Result[Array[OwnedTicket], FetchError])
+  RetryMyTickets
+  /// 一覧のチケットの詳細の開閉（チケット ID）。通信しない（BR13.2）
+  TicketDetailToggled(String)
 } derive(Eq, Debug)
 
 ///|
@@ -281,4 +313,6 @@ pub(all) enum Effect {
   SearchCourses(Int32, Int32, SearchInput)
   /// キーワードの待ち（keyword_debounce_ms 後に KeywordSettled(番号) を届ける。BR11.1）
   WaitKeyword(Int32)
+  /// 購入済みチケットの一覧の要求（従業員の世代）。Cookie 付きの `GET /api/tickets`（U3）
+  FetchMyTickets(Int32)
 } derive(Eq, Debug)
